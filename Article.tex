@@ -61,7 +61,7 @@ The model interactions are described as transitions between two states. A single
 
 MaBoSS simulates \emph{asynchronous update strategy}, further restricting the transitions between states. In this strategy, only a single node can change its value in a single transition; i.e., for a transition from $S$ to $S'$, there exists a single node $i$ such that $S_i \neq S'_i$ and for all $j \neq i$, $S_j = S'_j$. Consequently, a state $S$ can have at most $n$ possible transitions.
 
-For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to a state $S'$ (where only $S_i$ and $S'_i$ differ). If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
+For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to a state $S'$, where only $S_i$ and $S'_i$ differ. If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
 
 This formalization can also be understood as a formal definition of the Continuous-time Markov process. MaBoSS algorithm simulates this process by producing stochastic \emph{trajectories}. A trajectory is a sequence of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends when a state with no outgoing transitions or a maximum simulation time is reached.
 
@@ -122,13 +122,7 @@ In the following section, we describe the implementation of MaBoSS.MPI and MaBoS
 \subsection*{MaBoSS.MPI}
 
 \subsection*{MaBoSS.GPU}
-Porting MaBoSS algorithm to GPUs poses an interesting task from the optimizations perspective. A simple rewrite to an annotation-based tool, such as OpenACC, may not be the most optimal strategy due to the usage of complex data structures, such as hash maps and binary expression trees, that are not well suited for GPU hardware. In this section, we describe a CUDA GPU implementation of MaBoSS, and we detail the optimizations used to enable higher performance.
-
-The MaBoSS algorithm can be divided into two separate parts:
-\begin{enumerate}
-    \item Simulation --- The simulation part is responsible for generating the time trajectories of the system. In each time step, the algorithm decides the next trajectory step by evaluating each node's boolean formula. The results of the formulas are then used to update the node state.
-    \item Statistics computation --- The statistics computation takes raw trajectory data from the simulation part and transforms it to be more visualization-friendly. It envelopes the probability distribution of trajectory states across multiple trajectory samples and the computation of the final and fixed states of the system.
-\end{enumerate}
+Porting MaBoSS algorithm to GPUs poses an interesting task from the optimizations perspective. A simple rewrite to an annotation-based tool, such as OpenACC, may not be the most optimal strategy due to the usage of complex data structures, such as hash maps and expression trees, that are not well suited for GPU hardware. In this section, we describe a CUDA GPU implementation of the simulation step and the stats computation steps, and we detail the optimizations used to enable higher performance.
 
 \subsubsection*{Simulation}
 
@@ -138,13 +132,13 @@ There are multiple ways to tackle the problem of bad cache performance of the ex
 
 The major drawback of the runtime compilation is its speed. The compilation takes magnitudes longer than the building of the expression trees. On the other hand, the formulas compilation is executed only once at the beginning of the simulation and the compiled code is reused for the whole simulation. For the big enough models, the compilation time gets amortized well by the overall simulation and statistics computation time.
 
+In our implementation, we decided to assign a single GPU thread to a single trajectory. We mentioned in the previous section, that a work distribution, where multiple threads would work on a single trajectory, may be beneficial for large models. However, this can not be implemented trivially because this would introduce a thread divergence in the transition rates computation, which is penalized by a serial execution of the GPU threads. This optimization requires a clever rewrite of the Boolean logic, which we leave for future work.
+
 \subsubsection*{Statistics computation}
 
 The CPU implementation of this part of the algorithm heavily relies on the usage of hash maps. They are used to store node states as the keys, and the values may be the state occurrences or their average timespan in the trajectories, depending on the specific statistics computation. We will focus on the probability distribution of trajectory states since it is the most computationally demanding part of the statistics computation and the optimizations used for this part apply to the other statistics computations as well.
 
-The optimization of this step relies on the fact that the typical real-life MaBoSS models have many \emph{internal nodes}. A node is marked internal if we do not want it to contribute to the statistics computation. As a result, the typical number of nodes that are not internal is much smaller than the total number of nodes; e.g., in the model with 1000 nodes and only 5 non-internal nodes, the number of possible states in a trajectory can be $2^{1000}$, but the number of states that are important for the statistics computation is only $2^5$. 
-
-We used this fact to substitute the hash table with a more GPU-friendly histogram. The relatively low number of states generated by non-internal nodes allows us to materialize the whole histogram as a fixed-size array. The states are no longer stored as the keys --- rather, a hash function is used to map the states to the histogram array indices. We use a simple hash function with bit masking and shifting to extract and compact non-internal nodes from the state representation. Further, we use well-known GPU histogram optimizations, such as shared memory privatization and atomic operations, to improve the performance of the histogram computation.
+The optimization of this step relies on the fact that the typical number of non-internal nodes in a real-world MaBoSS model rarely exceeds 10 nodes regardless of the total number of nodes. The relatively low number of states generated by non-internal nodes allows us to materialize the whole histogram as a fixed-size array. The states are no longer stored as the keys --- rather, a hash function is used to map the states to the histogram array indices. We use a simple hash function with bit masking and shifting to extract and compact non-internal nodes from the state representation. Further, we use well-known GPU histogram optimizations, such as shared memory privatization and atomic operations, to improve the performance of the histogram computation.
 
 
 \section*{Results}
