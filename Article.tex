@@ -167,18 +167,52 @@ The MaBoSS benchmarking measurements described in this section were performed on
 \label{fig:synthetic_results}
 \end{figure}
 
-
-\subsection*{MaBoSS.GPU}
-MaBoSSG is written in C++/CUDA. It executes the MaBoSS time trajectories simulation on GPUs outputting millions of simulated trajectories per second. 
-
-MaBoSSG implements subset of MaBoSS algorithms over the time trajectories: The probabilities estimates and final+fixed states discovery.
-
 %\begin{figure}%[tbhp]
 %\centering
 %\includegraphics[width=.8\linewidth]{Figures/Figure_1}
 %\caption{Placeholder image of Iris with a long example caption to show justification setting.}
 %\label{fig:computerNo}
 %\end{figure}
+
+\subsection*{MaBoSS.GPU}
+
+In this section, we present the performance results of MaBoSS.GPU by comparing the runtimes of the CPU and GPU implementations on real-world and synthetic models. We also take a deeper look into the implementation by analyzing the overhead of the runtime compilation of the Boolean formulas. 
+
+\subsubsection*{Benchmarking Methodology}
+
+For the benchmarks, we used $3$ real-world models with varying model sizes spanning from $10$ nodes to $133$. In order to test the scalability of the GPU implementation, we also created a synthetic models with up to $1000$ nodes. Synthetic models are designed in a way such that the length of each trajectory is predictable, and the models have no stable states. Also, the number of non-internal nodes is kept low (10 nodes) to enable the usage of the histogram optimization.
+
+The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used for the final results after removing the outliers.
+
+\subsubsection*{Measurements}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{Figures/real.pdf}
+    \caption{Wall time comparison of CPU and GPU implementations on real-world models. Each model is simulated with 1 million trajectories.}
+    \label{fig:real}
+\end{figure}
+
+In Figure~\ref{fig:real}, we compare the wall time of the CPU and GPU implementations on real-world datasets. The GPU implementation is faster than the CPU implementation on all models, and the speedup shows to be more significant on the models with more nodes and longer trajectories. On Montagud model with 133 nodes but a relatively short average trajectory, we achieve $145\times$ speedup. On a slightly smaller Sizek model with a longer average trajectory, the speedup is up to $326\times$. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{Figures/nodes.pdf}
+    \caption{Wall time comparison of CPU and GPU implementations on synthetic models. Each model is simulated with 1 million trajectories.}
+    \label{fig:synth}
+\end{figure}
+
+Figure~\ref{fig:synth} shows much finer performance progression on synthetic models. On the left subplot, the runtime compilation is filtered out to show the pure simulation performance. We can see that the CPU variant starts to progress steeper at around the $100$ nodes boundary. We can expect that the implementation hits the cache size limit and fetching required data from the memory comes with more overhead. The same can be observed in the GPU variant, but at $200$ nodes and with a much more drastic increase. This observation corresponds to a much more significant performance penalty when fetching data from the GPU memory. Overall, this suggests that the optimization of dividing transition rates computation among multiple threads mentioned in the previous section may provide a significant speedup for bigger models as it alleviates the register pressure.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{Figures/nodes-compilation-big-NVIDIA Tesla A100 GPU.pdf}
+    \caption{The time spent in the runtime compilation of the Boolean formulas simulating models with varying numbers of nodes, trajectories, and formula lengths.}
+    \label{fig:comp}
+\end{figure}
+
+The right subplot shows the total runtime of the GPU implementation. Comparing the subplots shows that the runtime compilation ratio decreases with increasing model size. Figure~\ref{fig:comp} offers more detailed benchmarks for this scenario, run on the NVIDIA Tesla A100 GPU. The compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes). Notably, as soon as the simulation becomes more complex, i.e., by increasing the number of nodes or simulated trajectories, the compilation time becomes less than $10\%$ of the total runtime, even for the models with unrealistically long formulae. This suggests that the runtime compilation is a viable optimization for bigger models.
+
 
 \section*{Conclusions}
 
