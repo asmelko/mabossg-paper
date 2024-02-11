@@ -15,6 +15,8 @@
 % Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
 \author[1,\Letter]{Adam Šmelko}
 \author[2]{Miroslav Kratochvíl}
+\author[3,4,5]{Emmanuel Barillot}
+\author[3,4,5]{Laurence Calzone}
 \author[3,4,5,\Letter]{Vincent Noël}
 
 \affil[1]{Department of Software Engineering, Charles University, Prague, Czech Republic}
@@ -41,11 +43,12 @@ Computational Biology | High Performance Computing | Boolean models
 smelko@d3s.mff.cuni.cz, vincent.noel@curie.fr
 \end{corrauthor}
 \section*{Introduction}
-
-MaBoSS \cite{stoll2012continuous, stoll2017maboss}\\
-Why Boolean models are important\\
-Why are they getting larger\\
-Why are they need to be adapted for HPC environment\\
+Biological systems are very large and complex, and understanding their behavior remains a very important task to allow the design of new therapies for complex diseases such as cancer. A key approach in this endeavor is to build computational models from existing knowledge, and to analyze them to try to find intervention points and predict the efficacy of new treatment.
+Many different frameworks have been used to describe biological systems, from very quantitative systems of differential equations, to more qualitative approaches such as Boolean models. While the former seems more adapted to represent complex behavior such as non-linear dependencies, the latter is increasingly used because it allows the representation of very large systems.
+Many Boolean models have been built to describe biological systems, to tackle a variety of problems : from understanding basic properties of cell cycle\citep{faure2006cellcycle,sizek2019boolean}, to more advanced properties of cancer \citep{montagud2022prostate} or ...
+Historically, the task of building such models involved reading a very large literature and summarizing it in a list of important components and their interactions. More recently, thanks to advances in databases listing such interactions\citep{licata2020signor,turei2016omnipath}, and to experimental techniques providing informations on a larger number of components [rnaseq, single cell, …], methods have been designed to automatically infer Boolean formulas from the constraints encoded in the knowledge and in the experimental data \cite{chevalier2020synthesis,benevs2023boolean} to build large Boolean models. While this effort suffers many challenges, we believe it is the way to go to study the large scale complexity of biological systems. In order to analyse the dynamical properties of such large Boolean models, we need efficient methods, among them for simulations. In this effort, adapting to the modern HPC computing architectures existing softwares in an important goal. 
+MaBoSS \cite{stoll2012continuous, stoll2017maboss} is a stochastic Boolean simulator which performs estimations of state probability trajectories, based on Markov chains. 
+In this paper, we discuss about the adaptation of MaBoSS simulation algorithm for two different hardware architectures : large CPU clusters, with a MPI parallel implementation, and GPU accelerators.
 
 
 \section*{Background}
@@ -61,7 +64,7 @@ The model interactions are described as transitions between two states. A single
 
 MaBoSS simulates \emph{asynchronous update strategy}, further restricting the transitions between states. In this strategy, only a single node can change its value in a single transition; i.e., for a transition from $S$ to $S'$, there exists a single node $i$ such that $S_i \neq S'_i$ and for all $j \neq i$, $S_j = S'_j$. Consequently, a state $S$ can have at most $n$ possible transitions.
 
-For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to a state $S'$, where only $S_i$ and $S'_i$ differ. If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
+For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to a state $S'$ (where only $S_i$ and $S'_i$ differ). If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
 
 This formalization can also be understood as a formal definition of the Continuous-time Markov process. MaBoSS algorithm simulates this process by producing stochastic \emph{trajectories}. A trajectory is a sequence of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends when a state with no outgoing transitions or a maximum simulation time is reached.
 
@@ -120,7 +123,9 @@ In the following section, we describe the implementation of MaBoSS.MPI and MaBoS
 
 \section*{Implementation}
 \subsection*{MaBoSS.MPI}
-
+MaBoSS' CPU implementation already offered parallelism, allowing to use multiple CPU cores to compute the multiple trajectories. However, this implementation stays limited to a single machine CPU, and its scalability suffers from a very intensive memory usage. Furthermore, with the increasing number of nodes in Boolean models, the need for very large number of trajectories leads to large simulation time. 
+To tackle this, we decided to extend this implementation and add another layer of parallelism using MPI. In this implementation, the simulation of the trajectories is not only distributed on multiple cores, but on the multiple cores of multiple MPI nodes. By using this implementation, we are able to exploit the large CPU clusters available in HPC centers. 
+The implementation of this MPI implementation is straightforward, and consists in distributing the invidivual trajectories even further, first on MPI nodes and then on the CPU cores of the MPI node. Once the trajectories are simulated, the statistics are first computed for each MPI nodes, and then the global results is computer from the results of each MPI nodes. 
 \subsection*{MaBoSS.GPU}
 Porting MaBoSS algorithm to GPUs poses an interesting task from the optimizations perspective. A simple rewrite to an annotation-based tool, such as OpenACC, may not be the most optimal strategy due to the usage of complex data structures, such as hash maps and expression trees, that are not well suited for GPU hardware. In this section, we describe a CUDA GPU implementation of the simulation step and the stats computation steps, and we detail the optimizations used to enable higher performance.
 
@@ -144,8 +149,6 @@ The optimization of this step relies on the fact that the typical number of non-
 \section*{Results}
 
 \subsection*{MaBoSS.MPI}
-We developed an MPI parallel implementation of MaBoSS. 
-
 We simulated a cell cycle model by Sizek et al.\cite{sizek2019boolean} (Figure~\ref{fig:sizek_results}). A comparison of execution times of MaBoSS v2.5.3 and v2.4.0 using 40 cores and one million individual simulations showed a considerable (3×) speed-up between the pre- and post-optimisation versions, which is mostly due to optimised memory usage (figure 2, purple vs red). We used the same test with the MPI implementation of MaBoSS, using 20 cores for each MPI node, from 1 MPI node up to 192 MPI nodes. We can observe a very good speedup (>50x) up to 64 MPI nodes (1.28k cores), and a plateau for larger setups (Figure 7, green). This is probably due the very short simulation time (10s) for that setup and the minimum overhead for such a parallel simulation, and needs testing on larger simulations.
 
 
@@ -173,6 +176,7 @@ The MaBoSS benchmarking measurements described in this section were performed on
 %\caption{Placeholder image of Iris with a long example caption to show justification setting.}
 %\label{fig:computerNo}
 %\end{figure}
+
 
 \subsection*{MaBoSS.GPU}
 
@@ -213,7 +217,6 @@ Figure~\ref{fig:synth} shows much finer performance progression on synthetic mod
 
 The right subplot shows the total runtime of the GPU implementation. Comparing the subplots shows that the runtime compilation ratio decreases with increasing model size. Figure~\ref{fig:comp} offers more detailed benchmarks for this scenario, run on the NVIDIA Tesla A100 GPU. The compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes). Notably, as soon as the simulation becomes more complex, i.e., by increasing the number of nodes or simulated trajectories, the compilation time becomes less than $10\%$ of the total runtime, even for the models with unrealistically long formulae. This suggests that the runtime compilation is a viable optimization for bigger models.
 
-
 \section*{Conclusions}
 
 We did great work\\
@@ -223,7 +226,7 @@ bLA, BLA BLA
 
 
 \begin{acknowledgements}
-We thank Laurence Calzone and Gautier Stoll for their guidance and fruitful discussions.
+We thank Gautier Stoll for his guidance and fruitful discussion.
 \end{acknowledgements}
 
 \begin{funding}
