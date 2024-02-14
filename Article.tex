@@ -66,7 +66,7 @@ The model interactions are described as transitions between two states. A single
 
 MaBoSS simulates \emph{asynchronous update strategy}, further restricting the transitions between states. In this strategy, only a single node can change its value in a single transition; i.e., for a transition from $S$ to $S'$, there exists a single node $i$ such that $S_i \neq S'_i$ and for all $j \neq i$, $S_j = S'_j$. Consequently, a state $S$ can have at most $n$ possible transitions.
 
-For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to a state $S'$ (where only $S_i$ and $S'_i$ differ). If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
+For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to such state $S'$, where only $S_i$ and $S'_i$ differ. If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
 
 This formalization can also be understood as a formal definition of the Continuous-time Markov process. MaBoSS algorithm simulates this process by producing stochastic \emph{trajectories}. A trajectory is a sequence of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends when a state with no outgoing transitions or a maximum simulation time is reached.
 
@@ -101,7 +101,7 @@ In this section, we detail the time complexity of the algorithm steps and discus
 
 \subsection*{Simulation complexity and parallelization}
 
-Let us start by analyzing the time complexity of one iteration step of the simulation. Let us have a model with $n$ nodes. If we assume that one Boolean logic formula can be evaluated in $\mathcal{O}(n)$, then the computation of transition rates can be done in $\mathcal{O}(n^2)$. The selection of the flipping bit is $\mathcal{O}(n)$ and the rest of the iteration is $\mathcal{O}(1)$. Therefore, the total time complexity of one iteration is $\mathcal{O}(n^2)$. If we simulate $c$ trajectories with an upper bound of trajectory length $u$, the total simulation time is $\mathcal{O}(c \cdot u \cdot n^2)$. 
+Let us start by analyzing the time complexity of one iteration step of the simulation. Suppose a model with $n$ nodes. If we assume that one Boolean logic formula can be evaluated in $\mathcal{O}(n)$, then the computation of transition rates can be done in $\mathcal{O}(n^2)$. The selection of the flipping bit is $\mathcal{O}(n)$ and the rest of the iteration is $\mathcal{O}(1)$. Therefore, the total time complexity of one iteration is $\mathcal{O}(n^2)$. If we simulate $c$ trajectories with an upper bound of trajectory length $u$, the total simulation time is $\mathcal{O}(c \cdot u \cdot n^2)$. 
 
 Using an idealized parallel execution machine (PRAM model with infinite parallelism), we can optimize the algorithm in the following ways: 
 \begin{itemize}
@@ -109,7 +109,7 @@ Using an idealized parallel execution machine (PRAM model with infinite parallel
     \item A single trajectory iteration can be parallelized. With $n$ processors, the computation of transition rates is achievable in $\mathcal{O}(n)$ time, where each processor would evaluate one Boolean logic formula, and the selection of the flipping bit can be done in $\mathcal{O}(\log{n})$ time using parallel prefix sum. This sums up to $\mathcal{O}(n)$ time for a single iteration. 
 \end{itemize}
 
-Overall, using a perfect parallel machine with $c \cdot n$ processors, the simulation time can be reduced to $\mathcal{O}(u \cdot n)$. There is a clear dependency between the trajectory iterations, so $\mathcal{O}(u)$ steps must be performed serially. Realistically, parallelizing an iteration step may prove beneficial only for rather large models such that the scheduling overhead and communications cost are lower than the achieved parallelism.
+Overall, using a perfect parallel machine with $c \cdot n$ processors, the simulation time can be reduced to $\mathcal{O}(u \cdot n)$. There is a clear dependency between the trajectory iterations, so $\mathcal{O}(u)$ steps must be performed serially. Realistically, parallelizing an iteration step may prove beneficial only for rather large models when the scheduling overhead and communications cost are lower than the achieved parallelism.
 
 Also, since the trajectory iteration is the main `hot loop' of the whole algorithm (it is executed $c \cdot u$ times), optimizing it as much as possible is imperative. The penalty for the processor handling a cache miss inside each loop can result in the orders-of-magnitude slowdown. This puts a big pressure on the choice of the data representation for the state $S$ and Boolean logic formulas. We discuss this topic in the Implementation section. 
 
@@ -132,13 +132,13 @@ Porting MaBoSS algorithm to GPUs poses an interesting task from the optimization
 
 \subsubsection*{Simulation}
 
-The simulation part is the most computationally demanding part of the CPU MaBoSS implementation. The preliminary performance reports show that around $30-80\%$ of the MaBoSS runtime (depending on the model) is spent in the evaluation of Boolean formulas. This evaluation is carried out in a recursive call over an expression tree. This approach is not well suited for a CPU cache because the whole tree may span multiple cache lines; its traversal may easily result in a major cache miss ratio. The GPUs are even more susceptible to this problem because they have a lower cache per core ratio. We took this as a starting point for our optimizations.
+The simulation part is the most computationally demanding part of the CPU MaBoSS implementation. The preliminary performance reports show that around $30-80\%$ of the MaBoSS runtime (depending on the model) is spent in the evaluation of Boolean formulas. This evaluation is carried out in a recursive call over an expression tree. This approach is not well suited for a CPU cache because the whole tree may span multiple cache lines and, apart from other issues, its traversal may easily result in a major cache miss ratio~\cite{karlsson2000prefetching}. The GPUs are even more susceptible to this problem because they have a lower cache per core ratio. We took this as a starting point for our optimizations.
 
-There are multiple ways to tackle the problem of bad cache performance of the expression tree. The first one is to use a different data structure that is more cache-friendly, such as the van Emde Boas tree layout~\cite{van1975preserving}. In our approach, we take one step further by utilizing the \emph{runtime compilation of GPU code}. Using this technique, instead of building the expression tree for the Boolean formulas, we compile the formulas into a native binary code that can be executed directly on the GPU. The main advantage of this approach is that the formulas are encoded in the instructions instead of being stored in the memory. This way, the formulas would not need to be fetched from memory multiple times during the application runtime. The other advantage is that the compiler can optimize the GPU code to utilize the GPU hardware more efficiently. 
+There are multiple ways to tackle the problem of bad cache performance of the expression tree. One can either use a linked data structure that is more cache-friendly, such as the van Emde Boas tree layout~\cite{van1975preserving}, or perhaps represent the Boolean formulas as a compact continuous array with an ad-hoc layout. In our approach, we take one step further by utilizing the \emph{runtime compilation of GPU code}~\cite{nvrtc}. Using this technique, instead of building the expression tree for the Boolean formulas, we compile the formulas into a native binary code that can be executed directly on the GPU. The main advantage of this approach is that the formulas are encoded in the instructions instead of being stored in the memory. This way, the formulas would not need to be fetched from memory multiple times during the application runtime. The other advantage is that the compiler can optimize the GPU code to utilize the GPU hardware more efficiently. 
 
-The major drawback of the runtime compilation is its speed. The compilation takes magnitudes longer than the building of the expression trees. On the other hand, the formulas compilation is executed only once at the beginning of the simulation and the compiled code is reused for the whole simulation. For the big enough models, the compilation time gets amortized well by the overall simulation and statistics computation time.
+The major drawback of the runtime compilation is its speed. The compilation takes magnitudes longer than the building of the expression trees. On the other hand, the formulas compilation is executed only once at the beginning of the simulation and the compiled code is reused for the whole simulation. In theory, the compilation time can get amortized well by the overall simulation and statistics computation time for big enough models.
 
-In our implementation, we decided to assign a single GPU thread to a single trajectory. We mentioned in the previous section, that a work distribution, where multiple threads would work on a single trajectory, may be beneficial for large models. However, this can not be implemented trivially because this would introduce a thread divergence in the transition rates computation, which is penalized by a serial execution of the GPU threads. This optimization requires a clever rewrite of the Boolean logic, which we leave for future work.
+In our implementation, we decided to assign a single GPU thread to a single trajectory. We mentioned in the previous section, that a work distribution, where multiple threads would work on a single trajectory, may be beneficial for large models. However, this can not be implemented trivially without creating a thread divergence in the transition rates computation (which is usually penalized by a completely serialized execution anyway). This optimization requires a clever rewrite of the Boolean logic, which we leave for future work.
 
 \subsubsection*{Statistics computation}
 
@@ -159,7 +159,7 @@ In summary, MaBoSS.MPI evenly distributes individual trajectories first on MPI n
 
 \section*{Results}
 
-To evaluate the discussed optimizations, we present the results of performance benchmarks for MaBoSS.GPU and MaBoSS.MPI by comparing their runtimes against the original CPU implementation. To get the most accurate results, we used real-world models and synthetic models with varying sizes.
+To evaluate the discussed optimizations, we present the results of performance benchmarks for MaBoSS.GPU and MaBoSS.MPI by comparing their runtimes against the original CPU implementation. To get comprehensive results, we used real-world models and synthetic models with varying sizes.
 
 \subsubsection*{Benchmarking Methodology}
 
@@ -188,7 +188,7 @@ In Figure~\ref{fig:real}, we compare the wall time of the CPU and GPU implementa
     \label{fig:synth}
 \end{figure}
 
-Figure~\ref{fig:synth} shows much finer performance progression on synthetic models. On the left subplot, the runtime compilation is filtered out to show the pure simulation performance. We can see that the CPU variant starts to progress steeper at around the $100$ nodes boundary. We can expect that the implementation hits the cache size limit and fetching required data from the memory comes with more overhead. The same can be observed in the GPU variant, but at $200$ nodes and with a much more drastic increase. This observation corresponds to a much more significant performance penalty when fetching data from the GPU memory. Overall, this suggests that the optimization of dividing transition rates computation among multiple threads mentioned in the previous section may provide a significant speedup for bigger models as it alleviates the register pressure.
+Figure~\ref{fig:synth} shows much finer performance progression on synthetic models. On the left subplot, the runtime compilation is filtered out to show the pure simulation performance. We can see that the CPU variant starts to progress steeper at around the $100$ nodes boundary. We can expect that the implementation hits the cache size limit and fetching the required data from the memory comes with more overhead. The same can be observed in the GPU variant, but at $200$ nodes and with more drastic increase. This observation corresponds to a much more significant performance penalty when fetching data from the GPU memory. Overall, this suggests that the optimization of dividing transition rates computation among multiple threads mentioned in the previous section may provide a significant speedup for bigger models as it alleviates the register pressure.
 
 \begin{figure}
     \centering
@@ -209,7 +209,7 @@ The right subplot shows the total runtime of the GPU implementation. Comparing t
 \label{fig:sizek_results}
 \end{figure}
 
-Figure~\ref{fig:sizek_results} shows the efficiency of the MPI implementation on the Sizek model. We ran multiple suites, ranging from a single MPI node up to 192 nodes, each running 20 cores. We can observe a close-to-linear speedup of up to 64 MPI nodes (1.28k cores), and a plateau for larger suites (Figure 7, green). This can be explained by hitting a bottleneck in parallelization overhead and MPI communication cost when the problem is divided into too many small parts.
+Figure~\ref{fig:sizek_results} shows the efficiency of the MPI implementation on the Sizek model. We ran multiple suites, ranging from a single MPI node up to 192 nodes, each running 20 cores. We can observe a close-to-linear speedup of up to 64 MPI nodes (1280 cores), and a plateau for larger suites (Figure~\ref{fig:sizek_results}, green). This can be explained by hitting a bottleneck in parallelization overhead and MPI communication cost when the problem is divided into too many small parts.
 
 \begin{figure}%[tbhp]
 \centering
