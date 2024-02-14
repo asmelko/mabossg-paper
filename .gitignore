@@ -51,3 +51,5 @@ latex.out/
 *.xwm
 .vscode
 Article.pdf
+
+mpi-plots/plots/*
