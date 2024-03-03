@@ -111,7 +111,6 @@ MaBoSS algorithm simulates the above process to produce stochastic \emph{traject
 \State \textbf{return} $(S', t + \delta t)$
 \EndProcedure
 \end{algorithmic}
-%TODO this should be in a float/figure (\begin{algorithm} etc)
 \end{algorithm}
 
 To obtain a good overview of the Markovian process, multiple trajectories are generated and aggregated in a compound trajectory statistics. Commonly obtained statistics include:
@@ -242,7 +241,7 @@ Additionally, Figure~\ref{fig:synt} shows the total runtime of the GPU implement
 
 \begin{figure}%[tbhp]
 \centering
-\includegraphics[width=.8\linewidth]{Figures/sizek_mpi.pdf}
+\includegraphics[width=3.25in]{Figures/sizek_mpi.pdf}
 \caption{Scalability results of MPI implementation on Sizek model with 20 cores per MPI node.}
 \label{fig:sizek_results}
 \end{figure}
@@ -251,7 +250,7 @@ Figure~\ref{fig:sizek_results} shows the efficiency of the MaBoSS.MPI implementa
 
 \begin{figure}%[tbhp]
 \centering
-\includegraphics[width=.8\linewidth]{Figures/synth_mpi_speedup.pdf}
+\includegraphics[width=3.25in]{Figures/synth_mpi_speedup.pdf}
 \caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes and 32 cores per MPI node.}
 \label{fig:synthetic_results}
 \end{figure}
