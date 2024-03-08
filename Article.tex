@@ -9,7 +9,7 @@
 
 %\usepackage{blindtext}
 \usepackage{algorithm}
-\usepackage{algcompatible}
+\usepackage{algpseudocode}
 
 \title{MaBoSS for HPC environments: Implementations of the continuous time Boolean model simulator for large CPU clusters and GPU accelerators}
 % \shorttitle{MaBoSS for HPC environments}
@@ -57,121 +57,122 @@ Computational Biology | High Performance Computing | Boolean models
 \end{frontmatter}
 
 \section{Introduction}
-Biological systems are large and complex, and understanding their behavior remains critical to designing new therapies for complex diseases such as cancer. A crucial approach in this endeavor is building computational models from existing knowledge and analyzing them to find intervention points and predict the efficacy of new treatments.
-Many different frameworks have been used to describe biological systems, from quantitative systems of differential equations to more qualitative approaches such as Boolean models. While the former seems more adapted to represent complex behavior, such as non-linear dependencies, the latter is being increasingly used because it is capable of representing very large systems.
-Many Boolean models have been built to describe biological systems to tackle a variety of problems: from understanding fundamental properties of cell cycle~\cite{faure2006cellcycle,sizek2019boolean} to more advanced properties of cancer~\cite{fumia_carcinogenesis_2013, montagud2022prostate}.
 
-Historically, the task of building Boolean models involved reading an extensive amount of literature and summarizing it in a list of essential components and their interactions. More recently, thanks to advances in databases listing such interactions~\cite{licata2020signor,turei2016omnipath} and to experimental techniques providing information on a bigger number of components, the automatic methods have been designed to infer Boolean formulas from the constraints encoded in the knowledge and the experimental data~\cite{10.1093/bioinformatics/btaa484,chevalier2020synthesis,benevs2023boolean} to build large Boolean models. While this effort faces many challenges, we believe it is the best way to study the large-scale complexity of biological systems. However, in order to analyze the dynamic properties of such large Boolean models, we need to develop efficient simulation tools. In this effort, adapting existing software to modern HPC computing architectures is an important goal. 
+Biological systems are large and complex, and understanding their internal behavior remains critical for designing new therapies for complex diseases such as cancer.
+A crucial approach in this endeavor is building computational models from existing knowledge and analyzing them to find intervention points and to predict the efficacy of new treatments.
+Many different frameworks have been used to describe biological systems, from quantitative systems of differential equations to more qualitative approaches such as Boolean models.
+While the former seems more adapted to represent complex behavior, such as non-linear dependencies, the latter is being increasingly used because of its capability to analyze very large systems.
+Many Boolean models have been built to describe biological systems to tackle a variety of problems: from understanding fundamental properties of cell cycle~\cite{faure2006cellcycle,sizek2019boolean} to advanced properties of cancer~\cite{fumia_carcinogenesis_2013,montagud2022prostate}.
 
-Our work focuses on extending MaBoSS~\cite{stoll2012continuous, stoll2017maboss} --- a stochastic Boolean simulator that performs estimations of state probability trajectories based on Markov chains. 
-The main contributions of this paper are twofold:
+Historically, the task of building Boolean models involved reading an extensive amount of literature and summarizing it in a list of essential components and their interactions.
+More recently, thanks to advances in databases listing such interactions~\cite{licata2020signor,turei2016omnipath} and to experimental techniques providing information on a bigger number of components, the automatic methods have been designed to infer Boolean formulas from the constraints encoded in the knowledge and the experimental data~\cite{10.1093/bioinformatics/btaa484,chevalier2020synthesis,benevs2023boolean}, allowing construction of large Boolean models.
+While this effort faces many challenges, we believe it is a promising way to study the large-scale complexity of biological systems.
+However, in order to analyze the dynamic properties of such large Boolean models, we need to develop efficiently scalable simulation tools.
+
+Here, we present adaptations of MaBoSS~\cite{stoll2012continuous, stoll2017maboss} --- a stochastic Boolean simulator that performs estimations of state probability trajectories based on Markov chains -- to modern HPC computing architectures, which provide significant speedups of the computation, thus allowing scrutinization and analysis of much larger boolean models.
+The main contributions comprise of two new implementations of MaBoSS:
 \begin{itemize}
     \item MaBoSS.GPU, a GPU-accelerated implementation of MaBoSS, which is designed to exploit the computational power of massively parallel GPU hardware.
     \item MaBoSS.MPI, a parallel implementation of MaBoSS which can scale to multinode environments, such as large CPU clusters.
 \end{itemize}
 
-The source codes of the proposed implementations are publicly available at their respective GitHub repositories\footnote{\url{https://github.com/sysbio-curie/MaBoSS.GPU}} \footnote{\url{https://github.com/sysbio-curie/MaBoSS-env-2.0}}. We also provide the scripts, presented graphs, data and instructions to reproduce the benchmarks in the replication package\footnote{\url{https://github.com/asmelko/gigascience24-artifact}}.
+The source code of the proposed implementations is publicly available at their respective GitHub repositories\footnote{\url{https://github.com/sysbio-curie/MaBoSS.GPU}} \footnote{\url{https://github.com/sysbio-curie/MaBoSS-env-2.0}}. We also provide the scripts, presented plots, data and instructions to reproduce the benchmarks in the replication package\footnote{\url{https://github.com/asmelko/gigascience24-artifact}}.
 
-The paper is organized as follows. In the next section, we discuss the MaBoSS algorithm and its complexity. In the following section, we detail the implementation of MaBoSS.GPU and MaBoSS.MPI. In the results section, we present the performance benchmarks of the new implementations. Finally, we conclude the paper and discuss the future work. [TODO - add section refs]
-
+To showcase the utility of the new implementations, we performed benchmarking on both existing models and large-scale synthetic models. As the main results, MaBoSS.GPU may provided over 200\texttimes\ speedup over the current version of MaBoSS on a wide range of models using contemporary GPU accelerators, and MaBoSS.MPI is capable of almost linear performance scaling with added HPC resources, allowing similar speed-ups by utilizing the current HPC infrastructures.
 
 \section{Background}
 
-We begin with describing the most important aspects of MaBoSS algorithm in order to understand the optimizations described in the next section.  
+\subsection{Boolean signaling models}
 
-MaBoSS algorithm takes the Boolean approach for modeling networks which is defined by a Boolean model. A model consists of $n$ nodes which can be in one of two Boolean values: active ($1$) or inactive ($0$). The \emph{state} of the whole modeled system is represented by a vector $S$ of $n$ Boolean values where $S_i$ represents the value of the $i$-th node. We denote the set of all possible states as $\mathcal{S} = \{0, 1\}^n$ and it holds that $|\mathcal{S}| = 2^n$. 
+% this is very cool but can we simply refer to the maboss paper? or no one took care to formalize this properly yet?
 
-The model interactions are described as transitions between two states. A single state can have multiple transitions to other states; to encode the notion of prioritizing a specific state transition over others, the transitions are assigned a non-negative real value. Simply, a Boolean network generalizes to a directed weighted graph $G = (\mathcal{S}, \rho)$, where $\rho: \mathcal{S} \times \mathcal{S} \rightarrow [0, \infty)$ is a transition function generating \emph{transition rates}. For convenience, it holds that:
-\begin{equation}
-    \rho(S, S') = 0 \iff \text{there is no transition from}\ S\ \text{to}\ S'
-\end{equation}
+A Boolean signaling model consists of $n$ nodes which are either active or inactive, gaining values 1 or 0 respectively. The \emph{state} of the whole model is represented by a vector $S$ of $n$ Boolean values where $S_i$ represents the value of the $i$-th node. We denote the set of all possible states as $\mathcal{S} = \{0, 1\}^n$; thus $|\mathcal{S}| = 2^n$. 
 
-MaBoSS simulates \emph{asynchronous update strategy}, further restricting the transitions between states. In this strategy, only a single node can change its value in a single transition; i.e., for a transition from $S$ to $S'$, there exists a single node $i$ such that $S_i \neq S'_i$ and for all $j \neq i$, $S_j = S'_j$. Consequently, a state $S$ can have at most $n$ possible transitions.
+Interactions in the model are described as transitions between two states. A single state can have multiple transitions to other states with assigned transition probabilities. In turn, a Boolean network is represented as a directed weighted graph $G = (\mathcal{S}, \rho)$, where $\rho: \mathcal{S} \times \mathcal{S} \rightarrow [0, \infty)$ is a transition function generating \emph{transition rates}. For convenience, it holds that:
+\[ \rho(S, S') = 0 \iff \text{there is no transition from}\ S\ \text{to}\ S' \]
+MaBoSS simulates the \emph{asynchronous update strategy}, where at most a single node changes its value in each transition --- consequently, a state $S$ can have at most $n$ possible transitions.
 
-For each node, a \emph{Boolean logic} $\mathcal{B}: \mathcal{S} \rightarrow [0, \infty)$ is specified. The logic of $i$-th node determines if a state $S$ is allowed to transition to such state $S'$, where only $S_i$ and $S'_i$ differ. If $\mathcal{B}_i(S) = 0$, then the transition is not allowed. Otherwise, the transition is allowed, and the result value determines the transition rate.
+To determine the possible transitions, each node follows the \emph{Boolean logic} $\mathcal{B}_i: \mathcal{S} \rightarrow [0, \infty)$, which determines the expected Poisson-process rate of transitioning to the other value. If $\mathcal{B}_i(S) = 0$, then the transitions at node $i$ is not allowed in state $S$.
+Given this formalization, the simulation can be also viewed as a continuous-time Markov process.
 
-This formalization can also be understood as a formal definition of the Continuous-time Markov process. MaBoSS algorithm simulates this process by producing stochastic \emph{trajectories}. A trajectory is a sequence of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends when a state with no outgoing transitions or a maximum simulation time is reached.
+MaBoSS algorithm simulates the above process to produce stochastic \emph{trajectories}: sequences of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state, and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends either by a timeout when reaching the maximal allowed time, or by reaching a fixed point state with no outgoing transitions. The algorithm for a single iteration of the trajectory simulation is given explicitly in Algorithm~\ref{alg:iter}.
 
-Given a state $S$ and time $t$, the pseudocode for a single iteration of a trajectory simulation is as follows:
+\begin{algorithm}
+\caption{A single iteration of the MaBoSS simulation of a trajectory, given the state $S$ and time $t$.}
+\label{alg:iter}
 \begin{algorithmic}[1]
-\State Compute transition rates $\rho_1 = \mathcal{B}_1(S), \dots, \rho_n = \mathcal{B}_n(S)$
-\State Sample a random number $r$ from $[0, \sum_{i=1}^n \rho_i)$
-\State Find $i$ such that $\sum_{j=1}^{i-1} \rho_j \leq r < \sum_{j=1}^{i} \rho_j$
-\State Compute $S'$ from $S$ by flipping the $i$-th bit
-\State Sample a random number $u$ from $[0, 1]$
-\State Compute $\delta t = -(\ln u) / \sum_{i=1}^n \rho_i$
-\State Set $S = S'$ and $t = t + \delta t$
+\Procedure{TrajectorySimulationStep}{S, t}
+\State $\rho_1 \gets \mathcal{B}_1(S), \dots, \rho_n \gets \mathcal{B}_n(S)$ \Comment compute transition rates
+\State $r \gets \text{random}([0, \sum_{i=1}^n \rho_i))$
+\State $i \gets \min_i \sum_{j=1}^{i-1} \rho_j \leq r < \sum_{j=1}^{i} \rho_j$ \Comment select a node for flipping
+\State $S'\gets S\ \text{with the $i$-th bit flipped}$
+\State $u \gets \text{random}([0, 1])$
+\State $\delta t \gets -\frac{\ln u}{\sum_{i=1}^n \rho_i}$
+\State \textbf{return} $(S', t + \delta t)$
+\EndProcedure
 \end{algorithmic}
+\end{algorithm}
 
-Multiple trajectories are generated to get a good representation of the Markov process. Then, the statistics of the trajectories are computed. These are:
-
-\begin{enumerate}
-    \item \emph{Network state probabilities on a time window} --- Trajectory states are divided by their transition times into time windows based on the time intervals specified by a window size $\Delta t$. For each window, the probability of each state is computed as the duration spent in the state divided by the window size. The probabilities of the corresponding windows are then averaged across all subtrajectories.
-    \item \emph{Final states} --- The final state of a trajectory is the last state of the trajectory. The sampled states from the trajectories are used to compute the final state distribution.
-    \item \emph{Fixed states} --- A state is fixed if it has no outgoing transitions. The sampled states from the trajectories are used to compute the fixed state distribution.
-\end{enumerate}
-
-Notably, nodes can be marked as \emph{internal}. The internal nodes are not considered in the statistics computation of time window probabilities and final states. More specifically, before a trajectory is used for statistics computation, the internal nodes are removed from each state in the trajectory.
-This feature is helpful for the models where some nodes are used only for simulation purposes and/or are irrelevant to the final results.
-
-
-\section{Complexity evaluation and parallelization opportunities of MaBoSS}
-
-MaBoSS algorithm is, in many aspects, very suitable for highly parallel processing. The simulation across multiple trajectories is embarrassingly parallel because the trajectories are independent of each other. Although the statistics computation is slightly more complicated because the intermediate results from separate trajectories need to be reduced to compute the final statistics, the topic of parallel reduction is a well-researched problem with many efficient solutions. 
-
-In this section, we detail the time complexity of the algorithm steps and discuss the parallelization opportunities.
-
-\subsection{Simulation complexity and parallelization}
-
-Let us start by analyzing the time complexity of one iteration step of the simulation. Suppose a model with $n$ nodes. If we assume that one Boolean logic formula can be evaluated in $\mathcal{O}(n)$, then the computation of transition rates can be done in $\mathcal{O}(n^2)$. The selection of the flipping bit is $\mathcal{O}(n)$ and the rest of the iteration is $\mathcal{O}(1)$. Therefore, the total time complexity of one iteration is $\mathcal{O}(n^2)$. If we simulate $c$ trajectories with an upper bound of trajectory length $u$, the total simulation time is $\mathcal{O}(c \cdot u \cdot n^2)$. 
-
-Using an idealized parallel execution machine (PRAM model with infinite parallelism), we can optimize the algorithm in the following ways: 
+To obtain a good overview of the Markovian process, multiple trajectories are generated and aggregated in a compound trajectory statistics. Commonly obtained statistics include:
 \begin{itemize}
-    \item All trajectory simulations can be performed in parallel, reducing the time complexity to $\mathcal{O}(m \cdot n^2)$.
-    \item A single trajectory iteration can be parallelized. With $n$ processors, the computation of transition rates is achievable in $\mathcal{O}(n)$ time, where each processor would evaluate one Boolean logic formula, and the selection of the flipping bit can be done in $\mathcal{O}(\log{n})$ time using parallel prefix sum. This sums up to $\mathcal{O}(n)$ time for a single iteration. 
+    \item \emph{Network state probabilities on a time window} --- Trajectory states are divided by their transition times into time windows based on the time intervals specified by a window size. For each window, the probability of each state is computed as the duration spent in the state divided by the window size. The probabilities of the corresponding windows are then averaged across all subtrajectories.
+    \item \emph{Final states} --- The last sampled states from the trajectories are used to compute a final state distribution.
+    \item \emph{Fixed states} --- All reached fixed points are used to compute a fixed state distribution.
 \end{itemize}
 
-Overall, using a perfect parallel machine with $c \cdot n$ processors, the simulation time can be reduced to $\mathcal{O}(u \cdot n)$. There is a clear dependency between the trajectory iterations, so $\mathcal{O}(u)$ steps must be performed serially. Realistically, parallelizing an iteration step may prove beneficial only for rather large models when the scheduling overhead and communications cost are lower than the achieved parallelism.
+To maintain the brevity in the statistics, MaBoSS additionally allows marking some nodes \emph{internal}.
+This is useful because nodes that are not ``interesting'' from the point of final result view occur quite frequently in Boolean models, and removing them from statistics computation often saves a significant amount of resources.
 
-Also, since the trajectory iteration is the main `hot loop' of the whole algorithm (it is executed $c \cdot u$ times), optimizing it as much as possible is imperative. The penalty for the processor handling a cache miss inside each loop can result in the orders-of-magnitude slowdown. This puts a big pressure on the choice of the data representation for the state $S$ and Boolean logic formulas. We discuss this topic in the Implementation section. 
+\subsection{Computational complexity of MaBoSS algorithm in parallel}
 
-\subsection{Statistics computation complexity and parallelization}
+\subsubsection{Simulation complexity}
 
-For the sake of brevity, let us discuss only the time window probabilities computation. The final and fixed states computation performs the same operation but less often because the final and fixed states are computed only from the last state of each trajectory.
+% TODO this paragraph needs friggin references to the algorithm figure -- took me a while to see where to get the "all other parts"
+We estimate the time required to simulate $c$ trajectories as follows:
+For simplification, we assume that a typical Boolean logic formula in a model of $n$ nodes can be evaluated in $\mathcal{O}(n)$ (this is a very optimistic but empirically valid estimate). With that, the computation of all possible transition rates can be finished in $\mathcal{O}(n^2)$. The selection of the flipping bit can be finished in $\mathcal{O}(n)$, and all other parts of the iteration can finish in $\mathcal{O}(1)$. In total, the time complexity of one iteration is $\mathcal{O}(n^2)$. If we simulate $c$ trajectories with an upper bound of trajectory length $u$, the simulation time is in $\mathcal{O}(c \cdot u \cdot n^2)$.
 
-The first part of the computation is updating a data structure that holds the durations of states visited in a trajectory. With the choice of a hash map as the data structure, the update can be done in $\mathcal{O}(1)$ time. In the second part, after all trajectories are simulated, the intermediate data structures from the trajectories must be merged into a final one. This can be done in $\mathcal{O}(\log{c} \cdot m)$ time, assuming a serial merging cost of $\mathcal{O}(m)$.
+In an idealized PRAM model with infinite parallelism, we can optimize the algorithm in the following ways:
+\begin{itemize}
+    \item Given $c$ processors, all trajectory simulations can be performed in parallel, reducing the time complexity to $\mathcal{O}(m \cdot n^2)$.
+    %TODO might be useful to explicitly note that this doesn't include result aggregation (and link to the section)
+    \item With $n$ processors, the computation of transition rates in the simulation can be done $\mathcal{O}(n)$ time, and the selection of the flipping bit can be done in $\mathcal{O}(\log{n})$ time using a parallel prefix sum, giving $\mathcal{O}(n)$ time for a single iteration.
+\end{itemize}
+Thus, using a perfect parallel machine with $c \cdot n$ processors, the computation time can be reduced to $\mathcal{O}(u \cdot n)$. Notably, the $\mathcal{O}(u)$ simulation steps that must be performed serially remain a major factor in the whole computation time.
 
-Notably, if the number of states is small enough, or the nodes are dominated by many internal nodes, the hash map can be materialized as a fixed-size array (and be interpreted as a histogram). This would eliminate any memory allocations and the key lookup would be reduced to a simple index function. This optimization is discussed in the next section.
+\subsubsection{Statistics aggregation}
 
-Finally, we use this discussion to detail the specific optimization choices in the implementation of the algorithms.
+The aggregation of the statistics from the simulations is typically done by updating a shared associative structure indexed by model states, differing only in update frequency between the three kinds of collected statistics.
+
+If the associative structure is implemented as a hashmap, the updates can be done in $\mathcal{O}(1)$ for a single process. With multiple processors, the algorithm may hold partial versions of the hashmap for each processor, and aggregate all of them at the end of computation, which can be done in $\mathcal{O}(\log{c} \cdot m)$ using $c$ processors, assuming the maximal size of statistic to be $m$.
+
+As an interesting detail, the hash structures pose a surprising constant-factor overhead. In networks where most nodes are internal, the hash map may be replaced by a fixed-size multidimensional array that holds an element for all possible combinations of external node values (basically forming a multidimensional histogram). We discuss the impact of this optimization in the next section.
 
 \section{Implementation}\label{sec:implementation}
 
-In this section, we describe the high-level overview of MaBoSS.GPU and MaBoSS.MPI implementation.
-
 \subsection{MaBoSS.GPU}
-Porting MaBoSS algorithm to GPUs poses an interesting task from the optimizations perspective. A simple rewrite to an annotation-based tool, such as OpenACC, may not be the most optimal strategy due to the usage of complex data structures, such as hash maps and expression trees, that are not well suited for GPU hardware. We divided the implementation into two parts: the bare \emph{simulation} and the trajectory \emph{statistics computation}. 
 
 \subsubsection{Simulation}
 
-The simulation part is the most computationally demanding part of the CPU MaBoSS implementation. The preliminary performance reports show that around $30-80\%$ of the MaBoSS runtime (depending on the model) is spent in the evaluation of Boolean formulas. This evaluation is carried out in a recursive call over an expression tree. This approach is not well suited for a CPU cache because the whole tree may span multiple cache lines and, apart from other issues, its traversal may easily result in a major cache miss ratio~\cite{karlsson2000prefetching}. The GPUs are even more susceptible to this problem because they have a lower cache per core ratio. We took this as a starting point for our optimizations.
+In the CPU version of MaBoSS, the simulation part is the most computationally demanding part, with up to 80\% of MaBoSS runtime spent by just evaluating the Boolean formulas (the exact number depends on the model). The original formula evaluation algorithm in MaBoSS used a recursive traversal of the expression tree, which (apart from other issue) causes memory usage patterns unsuitable for GPUs: the memory required per each core is not achievable in current GPUs, and there are typically too many cache misses~\cite{karlsson2000prefetching}
 
-There are multiple ways to tackle the problem of bad cache performance of the expression tree. One can either use a linked data structure that is more cache-friendly, such as the van Emde Boas tree layout~\cite{van1975preserving}, or perhaps represent the Boolean formulas as a compact continuous array with an ad-hoc layout. In our approach, we take one step further by utilizing the \emph{runtime compilation of GPU code}~\cite{nvrtc}. Using this technique, instead of building the expression tree for the Boolean formulas, we compile the formulas into a native binary code that can be executed directly on the GPU. The main advantage of this approach is that the formulas are encoded in the instructions instead of being stored in the memory. This way, the formulas would not need to be fetched from memory multiple times during the application runtime. The other advantage is that the compiler can optimize the GPU code to utilize the GPU hardware more efficiently. 
+There are multiple ways to optimize the expression trees for GPUs: One may use a linked data structure that is more cache-friendly such as the van Emde Boas tree layout~\cite{van1975preserving}, or perhaps represent the Boolean formulas as a compact continuous array, or convert it to CNF or DNF bitmasks that can be easily evaluated by vector instructions. We decided to leave the exact representation choice on the compiler, by encoding the expressions as direct code and using the runtime compilation of GPU code~\cite{nvrtc}. Using this technique, the Boolean formulas are compiled as functions into a native binary code, which is directly executed by the GPU. As the main advantage, the formulae are encoded in the instructions, preventing unnecessary fetches of the encoded formulas from other memory. At the same time, the compiler may apply a vast spectrum of optimizations on the Boolean formulas, including case analysis and shortcutting, again resulting in faster evaluation.
 
-The major drawback of the runtime compilation is its speed. The compilation takes magnitudes longer than the building of the expression trees. On the other hand, the formulas compilation is executed only once at the beginning of the simulation and the compiled code is reused for the whole simulation. In theory, the compilation time can get amortized well by the overall simulation and statistics computation time for big enough models.
+A possible drawback of the runtime compilation stems from the relative slowness of the compiler --- for small models, the total execution time of MaBoSS.GPU may be easily dominated by the compilation.
 
-In our implementation, we decided to assign a single GPU thread to a single trajectory. We mentioned in the previous section, that a work distribution, where multiple threads would work on a single trajectory, may be beneficial for large models. However, this can not be implemented trivially without creating a thread divergence in the transition rates computation (which is usually penalized by a completely serialized execution anyway). This optimization requires a clever rewrite of the Boolean logic, which we leave for future work.
+Also, due to the involved implementation complexity, we avoided optimization of the computation of individual trajectories by splitting the Boolean function evaluation to multiple threads (thus missing the factor of $n$ threads from the asymptotic analysis). While such optimization might alleviate some cache pressure and thus provide significant performance improvements, we leave its exploration to future work.
 
-\subsubsection{Statistics computation}
+\subsubsection{Statistics aggregation}
 
-The CPU implementation of this part of the algorithm heavily relies on the usage of hash maps. They are used to store node states as the keys, and the values may be the state occurrences or their average timespan in the trajectories, depending on the specific statistics computation. We will focus on the probability distribution of trajectory states since it is the most computationally demanding part of the statistics computation and the optimizations used for this part apply to the other statistics computations as well.
+For optimizing the statistics aggregation, MaBoSS.GPU heavily relies on the fact that the typical number of non-internal nodes in a real-world MaBoSS model rarely exceeds 10 nodes, regardless of the size of the model. This relatively low number of states generated by non-internal nodes allows us to materialize the whole statistics structure (called ``histogram'') as a fixed-size array (rarely exceeding $2^10$ elements).
 
-The optimization of this step relies on the fact that the typical number of non-internal nodes in a real-world MaBoSS model rarely exceeds 10 nodes regardless of the total number of nodes. The relatively low number of states generated by non-internal nodes allows us to materialize the whole histogram as a fixed-size array. The states are no longer stored as the keys --- rather, a hash function is used to map the states to the histogram array indices. We use a simple hash function with bit masking and shifting to extract and compact non-internal nodes from the state representation. Further, we use well-known GPU histogram optimizations, such as shared memory privatization and atomic operations, to improve the performance of the histogram computation.
+This approach allows us to avoid storing the states as the keys, and gives a simple approach that can map the state to the histogram index using simple bit masking and shifting instructions. Further, we use sevelra well-known GPU histogram update optimizations to improve the performance, including as shared memory privatization and atomic operations.
 
 \subsection{MaBoSS.MPI}
-Since MaBoSS.MPI and MaBoSS.GPU projects were developed in parallel, the MPI implementation of MaBoSS is based on the original CPU code. Same as in GPU code, CPU implementation also assigns a single thread to a single trajectory. The MPI implementation simply extends this distribution of work among multiple MPI nodes, adding the second layer of parallelism. 
 
-In summary, MaBoSS.MPI evenly distributes individual trajectories first on MPI nodes and then on the corresponding CPU cores, assuming the MPI nodes are homogenous. Once the trajectories are simulated and the statistics are computed for each MPI node, the intermediate data are reduced into a final result using MPI collective operations.
+MaBoSS.MPI is a straightforward extension of the original MaBoSS CPU code to the MPI programming interface.
+Briefly, each thread is assigned to compute a single trajectory at once, progressively collecting the results into a privatized hashmap-based statistics aggregation structure. The total amount of trajectory tasks is evenly split among the MPI nodes, adding a second layer of parallelism.
+
+Once all trajectory simulations are finished and the statistics are computed for each thread, the intermediate data are reduced into the final result using MPI collective operations.
 
 
 % MaBoSS' CPU implementation already offered parallelism, allowing to use multiple CPU cores to compute the multiple trajectories. However, this implementation stays limited to a single machine CPU, and its scalability suffers from a very intensive memory usage. Furthermore, with the increasing number of nodes in Boolean models, the need for very large number of trajectories leads to large simulation time. 
@@ -181,66 +182,80 @@ In summary, MaBoSS.MPI evenly distributes individual trajectories first on MPI n
 
 \section{Results}
 
-To evaluate the discussed optimizations, we present the results of performance benchmarks for MaBoSS.GPU and MaBoSS.MPI by comparing their runtimes against the original CPU implementation. To get comprehensive results, we used real-world models and synthetic models with varying sizes.
+To evaluate the impact of the implemented optimizations, we present the results of performance benchmarks for MaBoSS.GPU and MaBoSS.MPI by comparing their runtimes against the original CPU implementation. To obtain a comprehensive overview of achievable results, we used both real-world models and synthetic models with varying sizes.
 
 \subsection{Benchmarking Methodology}
 
-For the benchmarks, we used $3$ real-world models with varying model sizes spanning from $10$ nodes to $133$ (\texttt{cellcycle}~\cite{faure2006cellcycle}, \texttt{sizek}~\cite{sizek2019boolean} and \texttt{Montagud}~\cite{montagud2022prostate}). In order to test the scalability of the GPU and MPI implementation, we also created a synthetic models with up to $1000$ nodes. Synthetic models are designed in a way such that the length of each trajectory is predictable, and the models have no stable states. Also, the number of non-internal nodes is kept low (10 nodes) to enable the usage of the histogram optimization.
+% TODO: ok well, here you have a grande totale insane of 3 models, and decide to omit the size of the middle one by saying "yeah between 10 and 133" :D
+For the benchmarks, we used $3$ real-world models of $10$, $XXX$ and $133$ nodes (\texttt{cellcycle}~\cite{faure2006cellcycle}, \texttt{sizek}~\cite{sizek2019boolean} and \texttt{Montagud}~\cite{montagud2022prostate}). In order to test the scalability of the GPU and MPI implementation, we also created several synthetic models with up to $1000$ nodes. Synthetic models were designed in a way such that the length of each trajectory is predictable, and the models have no stable states. Also, the number of non-internal nodes was kept low (10 nodes) to enable the usage of the histogram optimization.
+%TODO here it would be nice to calm down stupid questions like "ok how realistic are the models actually" by pointing out that they are in the repository or something.
 
-The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used for the final results after removing the outliers.
+The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used as the final results after removing the outliers.
+%TODO: stats trigger: how did you remove the outliers? Manual QA? What caused the outliers?
 
 The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer.
+% TODO link to MN spec (I think they have a paper)
 
-
-\subsection{MaBoSS.GPU}
+\subsection{Performance of MaBoSS.GPU}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{Figures/real.pdf}
-    \caption{Wall time comparison of CPU and GPU implementations on real-world models. Each model is simulated with 1 million trajectories.}
+    \caption{Wall time comparison of MaBoSS and MaBoSS.GPU on real-world models. Each model is simulated with 1 million trajectories.}
+    % TODO it's slightly inconvenient that the plot legend only describes hardware; in turn the whole thing looks like you're benchmarking the hardware instead of the actual sofware implementations. Suggest using: MaBoSS (CPU), MaBoSS.GPU (RTX3070), MaBoSS.GPU (A100).
     \label{fig:real}
 \end{figure}
 
-In Figure~\ref{fig:real}, we compare the wall time of the CPU and GPU implementations on real-world datasets. The GPU implementation is faster than the CPU implementation on all models, and the speedup shows to be more significant on the models with more nodes and longer trajectories. On Montagud model with 133 nodes but a relatively short average trajectory, we achieve $145\times$ speedup. On a slightly smaller Sizek model with a longer average trajectory, the speedup is up to $326\times$. 
+% TODO above you're putting the Montagud/Sizek/whatever names into \texttt. I'd recommend using \textsc and doing it veeery consistently everywhere. Just for the general purpose of sparking the benchmark-nerd imaginations.
+In Figure~\ref{fig:real}, we compare the wall time of the CPU and GPU implementations on real-world datasets. The GPU implementation is faster than the CPU implementation on all models, and the speedup shows to be more significant on the models with more nodes and longer trajectories. On the Montagud model with 133 nodes, but a relatively short average trajectory, we achieve $145\times$ speedup. On a slightly smaller Sizek model with a longer average trajectory, the speedup is up to $326\times$. 
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{Figures/nodes.pdf}
-    \caption{Wall time comparison of CPU and GPU implementations on synthetic models. Each model is simulated with 1 million trajectories.}
+    \caption{Wall time comparison of MaBoSS and MaBoSS.GPU on synthetic models. Each model is simulated with 1 million trajectories. The two panels differ by inclusion of the runtime GPU code compilation, showing its impact on total run time.}
     \label{fig:synth}
 \end{figure}
 
-Figure~\ref{fig:synth} shows much finer performance progression on synthetic models. On the left subplot, the runtime compilation is filtered out to show the pure simulation performance. We can see that the CPU variant starts to progress steeper at around the $100$ nodes boundary. We can expect that the implementation hits the cache size limit and fetching the required data from the memory comes with more overhead. The same can be observed in the GPU variant, but at $200$ nodes and with more drastic increase. This observation corresponds to a much more significant performance penalty when fetching data from the GPU memory. Overall, this suggests that the optimization of dividing transition rates computation among multiple threads mentioned in the previous section may provide a significant speedup for bigger models as it alleviates the register pressure.
+Figure~\ref{fig:synth} shows much finer performance progression on synthetic models. We observed that the CPU variant starts to progress steeper at around the $100$ nodes boundary. We assume that the implementation hits the cache size limit, and the overhead of fetching the required data from the memory becomes dominant. The same can be observed in the GPU variant later at around $200$ nodes. Expectably, the cache-spilling performance penalty is much more significant on GPUs. Overall, the results suggest that the optimization of dividing transition rate computations among multiple threads, as mentioned in the previous section XXX TODO REF XXX, may provide a better speedup for bigger models, as it alleviates the register and cache pressure.
+% TODO danger there's a non-commented TODO above. Add an actual \ref if possible.
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{Figures/nodes-compilation-big-NVIDIA Tesla A100 GPU.pdf}
     \caption{The time spent in the runtime compilation of the Boolean formulas simulating models with varying numbers of nodes, trajectories, and formula lengths.}
+    % TODO: what happens if we swap the sample count (color) with formula length (facet) ?
+    % Also, it might be much better to have the percentages as logarithmic scale. (most of the space is now killed by the single 200node 10formula point)
+    % TODO: "sample count" in the legend is not defined anywhere around, maybe say "total trajectories" ?
     \label{fig:comp}
 \end{figure}
 
-The right subplot shows the total runtime of the GPU implementation. Comparing the subplots shows that the runtime compilation ratio decreases with increasing model size. Figure~\ref{fig:comp} offers more detailed benchmarks for this scenario, run on the NVIDIA Tesla A100 GPU. The compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes). Notably, as soon as the simulation becomes more complex, i.e., by increasing the number of nodes or simulated trajectories, the compilation time becomes less than $10\%$ of the total runtime, even for the models with unrealistically long formulae. This suggests that the runtime compilation is a viable optimization for bigger models.
+Additionally, Figure~\ref{fig:synt} shows the total runtime of the GPU implementation including the runtime compilation step. Comparing the panels, we observe that that the relative runtime compilation overhead quickly disappears with increasing model size. Figure~\ref{fig:comp} shows the results of a more detailed benchmarks for this scenario, as run on the NVIDIA Tesla A100 GPU. We observed that the compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes). Notably, as soon as the simulation becomes more complex (e.g., by increasing the number of nodes or simulated trajectories), the compilation time becomes relatively negligible even for models with unrealistically long formulae. This suggests that the runtime compilation is a viable optimization methodology also for much larger models.
 
+\subsection{Performance of MaBoSS.MPI}
 
-\subsection{MaBoSS.MPI}
+%TODO achtung, the figure DPI is somehow messed up and the letters are too tiny.
+%TODO: might be better to merge the figures into one (2 facets)
+%TODO: it's nice that there's a trend on the diagonal but that kinda looks like we're hiding fluctuations or small off-angle, can we scale the thing into a visibly horizontal straight line?
+%  - multiply the walltime by the number of cores to produce the realistic totalwastedtime
+%  - divide the speedup by the number of cores invested (to show speedup per investment)
 
 \begin{figure}%[tbhp]
 \centering
-\includegraphics[width=.8\linewidth]{Figures/sizek_mpi.pdf}
+\includegraphics[width=3.25in]{Figures/sizek_mpi.pdf}
 \caption{Scalability results of MPI implementation on Sizek model with 20 cores per MPI node.}
 \label{fig:sizek_results}
 \end{figure}
 
-Figure~\ref{fig:sizek_results} shows the efficiency of the MPI implementation on the Sizek model. We ran multiple suites, ranging from a single MPI node up to 192 nodes, each running 20 cores. We can observe a close-to-linear speedup of up to 64 MPI nodes (1280 cores), and a plateau for larger suites (Figure~\ref{fig:sizek_results}, green). This can be explained by hitting a bottleneck in parallelization overhead and MPI communication cost when the problem is divided into too many small parts.
+Figure~\ref{fig:sizek_results} shows the efficiency of the MaBoSS.MPI implementation on the Sizek model. We ran multiple suites, ranging from a single MPI node up to 192 nodes, each running 20 cores. We can observe a close-to-linear speedup of up to 64 MPI nodes (1280 cores), and a plateau for larger suites (Figure~\ref{fig:sizek_results}, green). This can be explained by hitting an expectable bottleneck in parallelization overhead and MPI communication cost when the problem is divided into too many small parts.
 
 \begin{figure}%[tbhp]
 \centering
-\includegraphics[width=.8\linewidth]{Figures/synth_mpi_speedup.pdf}
+\includegraphics[width=3.25in]{Figures/synth_mpi_speedup.pdf}
 \caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes and 32 cores per MPI node.}
 \label{fig:synthetic_results}
 \end{figure}
 
-To stress the scalability of the implementation, we also used a synthetic model with 1000 nodes (see Figure~\ref{fig:synthetic_results}). We simulated this model on 32 cores per MPI node, on 1 to 192 nodes (32 to 6144 cores). With this configuration, the simulation time decreases from 20 hours on 1 MPI node to 430 seconds on 192 nodes. As we hypothesized, a decline in the speedup was not observed in larger simulations. 
+To stress the scalability of the implementation, we also used a synthetic model with 1000 nodes. We simulated this model on 32 cores per MPI node, on 1 to 192 nodes (32 to 6144 cores). The obtained speedups are summarized in Figure~\ref{fig:synthetic_results}. Using this configuration, the simulation time decreases from 20 hours on 1 MPI node to 430 seconds on 192 nodes. As expected, the plateau in the speedup was not observed in simulations that involve larger models.
 
 % We simulated a cell cycle model by Sizek et al.\cite{sizek2019boolean} (Figure~\ref{fig:sizek_results}). A comparison of execution times of MaBoSS v2.5.3 and v2.4.0 using 40 cores and one million individual simulations showed a considerable (3×) speed-up between the pre- and post-optimisation versions, which is mostly due to optimised memory usage (figure 2, purple vs red). We used the same test with the MPI implementation of MaBoSS, using 20 cores for each MPI node, from 1 MPI node up to 192 MPI nodes. We can observe a very good speedup (>50x) up to 64 MPI nodes (1.28k cores), and a plateau for larger setups (Figure 7, green). This is probably due the very short simulation time (10s) for that setup and the minimum overhead for such a parallel simulation, and needs testing on larger simulations.
 
@@ -264,23 +279,26 @@ To stress the scalability of the implementation, we also used a synthetic model 
 
 \section{Conclusions}
 
-In this work, we presented two new implementations of MaBoSS tool, a continuous time Boolean model simulator, designed for HPC environments:  MaBoSS.GPU which is designed to exploit the computational power of massively parallel GPU hardware, and MaBoSS.MPI which enables MaBoSS to scale to many nodes of HPC clusters. We evaluated the performance of these implementations on real-world and synthetic models and demonstrated that both variants are capable of providing significant speedups over the original CPU code. The GPU implementation shows $145-326\times$ speedup on real-world models, and the MPI implementation delivers a close-to-linear strong scaling on big models.
+In this work, we presented two new implementations of MaBoSS tool, a continuous time Boolean model simulator, both of which are designed to enable utilization of the HPC computing resources: MaBoSS.GPU is designed to exploit the computational power of massively parallel GPU hardware, and MaBoSS.MPI enables MaBoSS to scale to many nodes of HPC clusters via the MPI framework. We evaluated the performance of these implementations on real-world and synthetic models and demonstrated that both variants are capable of providing significant speedups over the original CPU code. The GPU implementation shows 145--326\texttimes\ speedup on real-world models, and the MPI implementation delivers a close-to-linear strong scaling on big models.
 
-Overall, we believe the new MaBoSS extensions will enable the simulation of large, automatically generated models and will be a valuable tool for the systems biology community.
+Overall, we believe that the new MaBoSS implementations enable simulation and exploration of the behavior of very large, automatically generated models, thus becoming a valuable analysis tool for the systems biology community.
 
 \subsection{Future work} 
 
-As mentioned in the discussion section, the next steps in the development of MaBoSS.GPU would be to parallelize the iteration step of the simulation. This requires a different representation of Boolean formulas, which would not pose any thread divergence, probably by substituting runtime compilation with an in-memory data structure. This optimization could potentially decrease the register pressure created by holding the state data and thus increase the performance of huge models with hundreds of nodes.
+During the development, we identified several optimization directions that could be taken by researchers to further scale up the MaBoSS simulation approach.
 
-Furthermore, many parallelization methods used in GPU implementation could be backported to the CPU implementation, increasing the overall usability of MaBoSS running on systems without GPU accelerators. 
+Mainly, the parallelization scheme used in MaBoSS.GPU could be enhanced to also parallelize over the evaluation of Boolean formulas. To avoid GPU thread divergence, this would however require a specialized Boolean formula representation, entirely different from the current version of MaBoSS; likely even denying the relative efficiency of the use of runtime compilation. On the other hand, this optimization might decrease the register pressure created by holding the state data, and thus increase the performance on models with thousands of nodes.
 
-Finally, to enable the simulation of extra-large models with thousands of nodes at billions of samples, the two presented parallelization methods could be combined into a single high-performance solution by running GPU implementation on multiple MPI nodes.
+In the long term, easier optimization paths might lead to sufficiently good results: For example, backporting the GPU implementation improvements back to the MaBoSS CPU implementation could improve the performance even on systems where GPU accelerators are not available. Similarly, both MaBoSS.GPU and MaBoSS.MPI could be combined into a single software that executes distributed GPU-based analysis over multiple MPI nodes, giving a single high-performance solution for extremely large problems.
 
 \section{Acknowledgements}
 We thank Gautier Stoll for his guidance and fruitful discussion.
 
 \section{Funding}
-This work was supported by the European Commission under the PerMedCoE project [H2020-ICT-951773] and SVV project number 260 698.
+%TODO the permed ack wasn't right, it should be:
+he research leading to these results has received funding from the European Union's Horizon 2020 Programme under the PerMedCoE Project (\url{http://www.permedcoe.eu}), grant agreement n\textsuperscript{o}~951773.
+% This work was supported by the European Commission under the PerMedCoE project [H2020-ICT-951773]
+The project was partially supported by Charles University, SVV project number~260698.
 
 
 % \section*{Bibliography}
