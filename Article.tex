@@ -1,8 +1,60 @@
-\documentclass[a4paper,num-refs]{oup-contemporary}
-% \RequirePackage[2020-02-02]{latexrelease}
-% \documentclass[times, twoside]{zHenriquesLab-StyleBioRxiv}
+%Version 3 October 2023
+% See section 11 of the User Manual for version history
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                 %%
+%% Please do not use \input{...} to include other tex files.       %%
+%% Submit your LaTeX manuscript as one .tex document.              %%
+%%                                                                 %%
+%% All additional figures and files should be attached             %%
+%% separately and not embedded in the \TeX\ document itself.       %%
+%%                                                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\journal{gigascience}
+%%\documentclass[referee,sn-basic]{sn-jnl}% referee option is meant for double line spacing
+
+%%=======================================================%%
+%% to print line numbers in the margin use lineno option %%
+%%=======================================================%%
+
+%%\documentclass[lineno,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+
+%%======================================================%%
+%% to compile with pdflatex/xelatex use pdflatex option %%
+%%======================================================%%
+
+%%\documentclass[pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+
+
+%%Note: the following reference styles support Namedate and Numbered referencing. By default the style follows the most common style. To switch between the options you can add or remove �Numbered� in the optional parenthesis. 
+%%The option is available for: sn-basic.bst, sn-vancouver.bst, sn-chicago.bst%  
+ 
+%%\documentclass[sn-nature]{sn-jnl}% Style for submissions to Nature Portfolio journals
+% \documentclass[sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+\documentclass[sn-mathphys-num]{sn-jnl}% Math and Physical Sciences Numbered Reference Style 
+%%\documentclass[sn-mathphys-ay]{sn-jnl}% Math and Physical Sciences Author Year Reference Style
+%%\documentclass[sn-aps]{sn-jnl}% American Physical Society (APS) Reference Style
+%%\documentclass[sn-vancouver,Numbered]{sn-jnl}% Vancouver Reference Style
+%%\documentclass[sn-apa]{sn-jnl}% APA Reference Style 
+%%\documentclass[sn-chicago]{sn-jnl}% Chicago-based Humanities Reference Style
+
+%%%% Standard Packages
+%%<additional latex packages if required can be included here>
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
 
 \usepackage{graphicx}
 \usepackage{siunitx}
@@ -10,51 +62,106 @@
 %\usepackage{blindtext}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+%%%%
 
-\title{MaBoSS for HPC environments: Implementations of the continuous time Boolean model simulator for large CPU clusters and GPU accelerators}
-% \shorttitle{MaBoSS for HPC environments}
+%%%%%=============================================================================%%%%
+%%%%  Remarks: This template is provided to aid authors with the preparation
+%%%%  of original research articles intended for submission to journals published 
+%%%%  by Springer Nature. The guidance has been prepared in partnership with 
+%%%%  production teams to conform to Springer Nature technical requirements. 
+%%%%  Editorial and presentation requirements differ among journal portfolios and 
+%%%%  research disciplines. You may find sections in this template are irrelevant 
+%%%%  to your work and are empowered to omit any such section if allowed by the 
+%%%%  journal you intend to submit to. The submission guidelines and policies 
+%%%%  of the journal take precedence. A detailed User Manual is available in the 
+%%%%  template package for technical guidance.
+%%%%%=============================================================================%%%%
 
-% Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
-\author[1,\authfn{1}]{Adam Šmelko}
-\author[2]{Miroslav Kratochvíl}
-\author[3,4,5]{Emmanuel Barillot}
-% \author[3,4,5]{Laurence Calzone}
-\author[3,4,5,\authfn{1}]{Vincent Noël}
+%% as per the requirement new theorem styles can be included as shown below
+% \theoremstyle{thmstyleone}%
+% \newtheorem{theorem}{Theorem}%  meant for continuous numbers
+% %%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
+% %% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
+% \newtheorem{proposition}[theorem]{Proposition}% 
+% %%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
 
-\affil[1]{Department of Distributed and Dependable Systems, Charles University, Prague, Czech Republic}
-\affil[2]{Luxembourg Centre for Systems Biomedicine, University of Luxembourg, Esch-sur-Alzette, Luxembourg}
-\affil[3]{Institut Curie, Université PSL, F-75005, Paris, France}
-\affil[4]{INSERM, U900, F-75005, Paris, France}
-\affil[5]{Mines ParisTech, Université PSL, F-75005, Paris, France}
+% \theoremstyle{thmstyletwo}%
+% \newtheorem{example}{Example}%
+% \newtheorem{remark}{Remark}%
 
-\authnote{\authfn{1}smelko@d3s.mff.cuni.cz; vincent.noel@curie.fr}
+% \theoremstyle{thmstylethree}%
+% \newtheorem{definition}{Definition}%
 
-\papercat{Technical Note}
-
-\runningauthor{Šmelko et al.} 
-
-\jvolume{00}
-\jnumber{0}
-\jyear{2023}
+\raggedbottom
+%%\unnumbered% uncomment this for unnumbered level heads
 
 \begin{document}
 
-\begin{frontmatter}
+\title[MaBoSS for HPC environments]{MaBoSS for HPC environments: Implementations of the continuous time Boolean model simulator for large CPU clusters and GPU accelerators}
+
+%%=============================================================%%
+%% GivenName	-> \fnm{Joergen W.}
+%% Particle	-> \spfx{van der} -> surname prefix
+%% FamilyName	-> \sur{Ploeg}
+%% Suffix	-> \sfx{IV}
+%% \author*[1,2]{\fnm{Joergen W.} \spfx{van der} \sur{Ploeg} 
+%%  \sfx{IV}}\email{iauthor@gmail.com}
+%%=============================================================%%
+
+% \author*[1,2]{\fnm{First} \sur{Author}}\email{iauthor@gmail.com}
+
+% \author[2,3]{\fnm{Second} \sur{Author}}\email{iiauthor@gmail.com}
+% \equalcont{These authors contributed equally to this work.}
+
+% \author[1,2]{\fnm{Third} \sur{Author}}\email{iiiauthor@gmail.com}
+% \equalcont{These authors contributed equally to this work.}
+
+% \affil*[1]{\orgdiv{Department}, \orgname{Organization}, \orgaddress{\street{Street}, \city{City}, \postcode{100190}, \state{State}, \country{Country}}}
+
+% \affil[2]{\orgdiv{Department}, \orgname{Organization}, \orgaddress{\street{Street}, \city{City}, \postcode{10587}, \state{State}, \country{Country}}}
+
+% \affil[3]{\orgdiv{Department}, \orgname{Organization}, \orgaddress{\street{Street}, \city{City}, \postcode{610101}, \state{State}, \country{Country}}}
+
+\author[1]{\fnm{Adam} \sur{Šmelko}}\email{smelko@d3s.mff.cuni.cz}
+
+\author[2]{\fnm{Miroslav} \sur{Kratochvíl}}
+
+\author[3,4,5]{\fnm{Emmanuel} \sur{Barillot}}
+\author[3,4,5]{\fnm{Vincent} \sur{Noël}}\email{vincent.noel@curie.fr}
+
+\affil*[1]{\orgdiv{Department of Distributed and Dependable Systems}, \orgname{Charles University}, \orgaddress{\city{Prague},  \country{Czech Republic}}}
+\affil[2]{\orgdiv{Luxembourg Centre for Systems Biomedicine}, \orgname{University of Luxembourg}, \orgaddress{\city{Esch-sur-Alzette},  \country{Luxembourg}}}
+\affil[3]{\orgdiv{Institut Curie}, \orgname{Université PSL, F-75005}, \orgaddress{\city{Paris},  \country{France}}}
+\affil[4]{\orgdiv{INSERM}, \orgname{U900, F-75005}, \orgaddress{\city{Paris},  \country{France}}}
+\affil[5]{\orgdiv{Mines ParisTech}, \orgname{Université PSL, F-75005}, \orgaddress{\city{Paris},  \country{France}}}
+
+
+%%==================================%%
+%% Sample for unstructured abstract %%
+%%==================================%%
+
+\abstract{Computational models in systems biology are becoming more important with the advancement of experimental techniques to query the mechanistic details responsible for leading to phenotypes of interest. In particular, Boolean models are well fit to describe the complexity of signaling networks while being simple enough to scale to a very large number of components. With the advance of Boolean model inference techniques, the field is transforming from an artisanal way of building models of moderate size to a more automatized one, leading to very large models. In this context, adapting the simulation software for such increases in complexity is crucial. 
+We present two new developments in the continuous time Boolean simulators: MaBoSS.MPI, a parallel implementation of MaBoSS which can exploit the computational power of very large CPU clusters, and MaBoSS.GPU, which can use GPU accelerators to perform these simulations. }
+
+%%================================%%
+%% Sample for structured abstract %%
+%%================================%%
+
+% \abstract{\textbf{Purpose:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+% 
+% \textbf{Methods:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+% 
+% \textbf{Results:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+% 
+% \textbf{Conclusion:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.}
+
+\keywords{Computational Biology, High Performance Computing, Boolean models}
+
+%%\pacs[JEL Classification]{D8, H51}
+
+%%\pacs[MSC Classification]{35A01, 65L10, 65L12, 65L20, 65L70}
+
 \maketitle
-
-%TC:break Abstract
-%the command above serves to have a word count for the abstract
-\begin{abstract}
-Computational models in systems biology are becoming more important with the advancement of experimental techniques to query the mechanistic details responsible for leading to phenotypes of interest. In particular, Boolean models are well fit to describe the complexity of signaling networks while being simple enough to scale to a very large number of components. With the advance of Boolean model inference techniques, the field is transforming from an artisanal way of building models of moderate size to a more automatized one, leading to very large models. In this context, adapting the simulation software for such increases in complexity is crucial. 
-We present two new developments in the continuous time Boolean simulators: MaBoSS.MPI, a parallel implementation of MaBoSS which can exploit the computational power of very large CPU clusters, and MaBoSS.GPU, which can use GPU accelerators to perform these simulations. 
-\end {abstract}
-%TC:break main
-%the command above serves to have a word count for the abstract
-
-\begin{keywords}
-Computational Biology | High Performance Computing | Boolean models
-\end{keywords}
-\end{frontmatter}
 
 \section{Introduction}
 
@@ -76,7 +183,7 @@ The main contributions comprise two new implementations of MaBoSS:
     \item MaBoSS.MPI, a parallel implementation of MaBoSS which can scale to multinode environments, such as large CPU clusters.
 \end{itemize}
 
-The source code of the proposed implementations is publicly available at their respective GitHub repositories\footnote{\url{https://github.com/sysbio-curie/MaBoSS.GPU}} \footnote{\url{https://github.com/sysbio-curie/MaBoSS-env-2.0}}. We also provide the scripts, presented plots, data and instructions to reproduce the benchmarks in the replication package\footnote{\url{https://github.com/sysbio-curie/gigascience24-artifact}}.
+The source code of the proposed implementations is publicly available at their respective GitHub repositories\footnote{\url{https://github.com/sysbio-curie/MaBoSS.GPU}, \url{https://github.com/sysbio-curie/MaBoSS-env-2.0}}. We also provide the scripts, presented plots, data and instructions to reproduce the benchmarks in the replication package\footnote{\url{https://github.com/sysbio-curie/gigascience24-artifact}}.
 
 To showcase the utility of the new implementations, we performed benchmarking on both existing models and large-scale synthetic models. As the main results, MaBoSS.GPU provided over 200\texttimes\ speedup over the current version of MaBoSS on a wide range of models using contemporary GPU accelerators, and MaBoSS.MPI is capable of almost linear performance scaling with added HPC resources, allowing similar speedups by utilizing the current HPC infrastructures.
 
@@ -149,7 +256,7 @@ As an interesting detail, the hash structures pose a surprising constant-factor 
 
 \subsection{MaBoSS.GPU}
 
-\subsubsection{Simulation}
+\subsubsection*{Simulation}
 
 In the CPU version of MaBoSS, the simulation part is the most computationally demanding part, with up to 80\% of MaBoSS runtime spent by just evaluating the Boolean formulas (the exact number depends on the model). The original formula evaluation algorithm in MaBoSS used a recursive traversal of the expression tree, which (apart from other issues) causes memory usage patterns unsuitable for GPUs: the memory required per each core is not achievable in current GPUs, and there are typically too many cache misses~\cite{karlsson2000prefetching}.
 
@@ -159,7 +266,7 @@ A possible drawback of the runtime compilation stems from the relative slowness 
 
 Also, due to the involved implementation complexity, we avoided optimization of the computation of individual trajectories by splitting the Boolean function evaluation into multiple threads (thus missing the factor of $n$ threads from the asymptotic analysis). While such optimization might alleviate some cache pressure and thus provide significant performance improvements, we leave its exploration to future work.
 
-\subsubsection{Statistics aggregation}
+\subsubsection*{Statistics aggregation}
 
 For optimizing the statistics aggregation, MaBoSS.GPU heavily relies on the fact that the typical number of non-internal nodes in a real-world MaBoSS model rarely exceeds 10 nodes, regardless of the size of the model. This relatively low number of states generated by non-internal nodes allows us to materialize the whole statistics structure (called ``histogram'') as a fixed-size array (rarely exceeding $2^{10}$ elements).
 
@@ -188,7 +295,7 @@ For the benchmarks, we used $3$ real-world models of $10$, $87$ and $133$ nodes 
 
 The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used as the final result.
 
-The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer~\footnote{\url{https://www.bsc.es/marenostrum/marenostrum}}.
+The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer\footnote{\url{https://www.bsc.es/marenostrum/marenostrum}}.
 
 \subsection{Performance of MaBoSS.GPU}
 
@@ -274,14 +381,14 @@ Mainly, the parallelization scheme used in MaBoSS.GPU could be enhanced to also 
 
 In the long term, easier optimization paths might lead to sufficiently good results: For example, backporting the GPU implementation improvements back to the MaBoSS CPU implementation could improve the performance even on systems where GPU accelerators are not available. Similarly, both MaBoSS.GPU and MaBoSS.MPI could be combined into a single software that executes distributed GPU-based analysis over multiple MPI nodes, giving a single high-performance solution for extremely large problems.
 
-\section{Availability of source code and requirements}
+\section*{Availability and requirements}
 % flex and bison are linux only :/
 \begin{itemize}
 	\item Project name: MaBoSS.GPU
 	\item Project home page: \url{https://github.com/sysbio-curie/MaBoSS.GPU}
 	\item Operating system(s): Platform independent
 	\item Programming language: C++, CUDA
-	\item Other requirements: Flex, Bison, CMake >= 3.18, Cuda toolkit >= 12.0
+	\item Other requirements: Flex, Bison, CMake $>=$ 3.18, Cuda toolkit $>=$ 12.0
 	\item License: MIT
 \end{itemize}
 
@@ -294,38 +401,82 @@ In the long term, easier optimization paths might lead to sufficiently good resu
 	\item License: BSD3-clause
 \end{itemize}
 
-\section{Data availability}
+
+\backmatter
+
+\section*{Declarations}
+
+% Some journals require declarations to be submitted in a standardised format. Please check the Instructions for Authors of the journal to which you are submitting to see if you need to complete this section. If yes, your manuscript must contain the following sections under the heading `Declarations':
+
+\subsection*{Availability of data and materials}
+
 The scripts, presented plots, data and instructions to reproduce the benchmarks are available on GitHub~\cite{adam_smelko_2024_10841007}.
 
-\subsection{Competing Interests}
+\subsection*{Competing Interests}
 The authors declare that they have no competing interests.
 
-\section{Funding}
+\subsection*{Funding}
 The research leading to these results has received funding from the European Union's Horizon 2020 Programme under the PerMedCoE Project (\url{http://www.permedcoe.eu}), grant agreement n\textsuperscript{o}~951773.
 % This work was supported by the European Commission under the PerMedCoE project [H2020-ICT-951773]
 The project was partially supported by Charles University, SVV project number~260698.
 
-
-\section{Acknowledgements}
+\subsection*{Acknowledgements}
 We thank Laurence Calzone and Gautier Stoll for their guidance and fruitful discussions.
 
-% \section*{Bibliography}
-\bibliography{bibliography}
 
-%% You can use these special %TC: tags to ignore certain parts of the text.
-%TC:ignore
-%the command above ignores this section for word count
-% \onecolumn
-% \newpage
+%%===================================================%%
+%% For presentation purpose, we have included        %%
+%% \bigskip command. Please ignore this.             %%
+%%===================================================%%
+% \bigskip
+% \begin{flushleft}%
+% Editorial Policies for:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Supplementary Information %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\captionsetup*{format=largeformat}
-%\section{Something about something} \label{note:Note1} 
-%Something
+% \bigskip\noindent
+% Springer journals and proceedings: \url{https://www.springer.com/gp/editorial-policies}
 
-%TC:endignore
-%the command above ignores this section for word count
+% \bigskip\noindent
+% Nature Portfolio journals: \url{https://www.nature.com/nature-research/editorial-policies}
+
+% \bigskip\noindent
+% \textit{Scientific Reports}: \url{https://www.nature.com/srep/journal-policies/editorial-policies}
+
+% \bigskip\noindent
+% BMC journals: \url{https://www.biomedcentral.com/getpublished/editorial-policies}
+% \end{flushleft}
+
+% \begin{appendices}
+
+% \section{Section title of first appendix}\label{secA1}
+
+% An appendix contains supplementary information that is not an essential part of the text itself but which may be helpful in providing a more comprehensive understanding of the research problem or it is information that is too cumbersome to be included in the body of the paper.
+
+%%=============================================%%
+%% For submissions to Nature Portfolio Journals %%
+%% please use the heading ``Extended Data''.   %%
+%%=============================================%%
+
+%%=============================================================%%
+%% Sample for another appendix section			       %%
+%%=============================================================%%
+
+%% \section{Example of another appendix section}\label{secA2}%
+%% Appendices may be used for helpful, supporting or essential material that would otherwise 
+%% clutter, break up or be distracting to the text. Appendices can consist of sections, figures, 
+%% tables and equations etc.
+
+% \end{appendices}
+
+%%===========================================================================================%%
+%% If you are submitting to one of the Nature Portfolio journals, using the eJP submission   %%
+%% system, please include the references within the manuscript file itself. You may do this  %%
+%% by copying the reference list from your .bbl file, paste it into the main manuscript .tex %%
+%% file, and delete the associated \verb+\bibliography+ commands.                            %%
+%%===========================================================================================%%
+
+\bibliography{bibliography}% common bib file
+%% if required, the content of .bbl file can be included here once bbl is generated
+%%\input sn-article.bbl
+
 
 \end{document}
