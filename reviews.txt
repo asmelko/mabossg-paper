@@ -1,0 +1,128 @@
+Reviewer 1
+The paper introduces the expansion of an asynchronous Boolean model simulator to MPI/GPUs. These simulators have a strong impact in the biological community, towards this tool is mainly aimed for. Due to the biological need of many-species models, it is important to utilize the capabilities of new high-performance hardware. The expansion to MPI is the classical way in how to do this for standard clusters. Due to the development of exascale supercomputing hardware, the development of a GPU-version of the code is also highly useful. As the authors suggest, the combination of the GPU- and MPI-implementation in future work has the potential to make use of this exascale type hardware.
+The paper is technically sound, and provides the evidence needed for its claims using both already developed biological models, as well as artificial models to demonstrate larger capabilities. Both implementations (MPI and GPU), as well as the scripts used in the discussion are available on GitHub.
+However, in my eyes, the paper could strongly improve by clarifying the methods/ tools discussed in the paper in much more detail. 
+Furthermore, the work could also benefit from a more thorough discussion of its embedding in the already vast existing literature in this field.
+
+Major issues:
+
+- Q1 Extend upon the literature. Here some possible suggestions:
+-- For the first paragraph, e.g., I would suggest the following review article, which tries to summarize the current state of the art for the modeling of cell behavior: Bongrand, P. "Understanding How Cells Probe the World: A Preliminary Step towards Modeling Cell Behavior?." International Journal of Molecular Sciences 24.3 (2023): 2266.
+
+-- An automatic tool to infer Boolean rules that connect steady states with inputs, would be, e.g.,: Prugger, Martina, et al. "Unsupervised logic-based mechanism inference for network-driven biological processes." PLOS Computational Biology 17.6 (2021): e1009035.
+
+-- Gilespies SSA algorithm should be cited directly, since it is the basis of this implementation. Gillespie, Daniel T. "A general method for numerically simulating the stochastic time evolution of coupled chemical reactions." Journal of computational physics 22.4 (1976): 403-434.
+
+-- A discussion for Boolean steady states for Markov Chains can be found, e.g. in: Saadatpour, Assieh, István Albert, and Réka Albert. "Attractor analysis of asynchronous Boolean models of signal transduction networks." Journal of theoretical biology 266.4 (2010): 641-656.
+
+-- A suggestion in how to classify Data on/off would be: Wooten, David J., et al. "Systems-level network modeling of Small Cell Lung Cancer subtypes identifies master regulators and destabilizers." PLoS computational biology 15.10 (2019): e1007343.
+
+-- Comparisons with similar tools that are already out there should be drawn in more details. A tool I would suggest is: Müssel, Christoph, Martin Hopfensitz, and Hans A. Kestler. "BoolNet—an R package for generation, reconstruction and analysis of Boolean networks." Bioinformatics 26.10 (2010): 1378-1380.
+
+-- The asynchronous updating scheme for Boolean rules is a simplification of the Chemical Master Equation formulation. SSA is the ansatz, which the developers chose to approach in this implementation. However, this comes with its own drawbacks, which should be pointed out in the paper. A possible drawback, e.g., would be discussed in: Gillespie, Daniel T., Andreas Hellander, and Linda R. Petzold. "Perspective: Stochastic algorithms for chemical kinetics." The Journal of chemical physics 138.17 (2013). 
+
+- A thorough discussion is necessary about the code from which this paper builds upon:
+-- Q2 There needs to be a description about the original code. Most importantly, it is always referred to, as the CPU version. This suggests, that we are talking about a purely sequential code. In the Methodology, however, it is described to be run on a full 32-core node, which implies already some basic parallelization. This should be made clear from the beginning.
+
+-- Q3 As mentioned in the literature point, the code is based on Gillespies SSA. The possible drawbacks (e.g., for low abundant phenotypes, an exessively large number of trajectories is required) should be discussed. This is furthermore strengthening the point of the paper, since running on multiple nodes/GPUs enables this exessively large number of trajectories.
+
+--- Q4 how does the code actually deal with circular steady states?
+
+-- Q5 The Boolean signaling modeling paragraph needs to be extended in more details: To me it is not clear, why e.g., the transition rates should be in [0, inf) and not [0,1], since we are talking about probabilities. The concept of asynchronous updating should be made a bit clearer as well. Furthermore, it is often referred to the evaluation of the Boolean formulas as the most expensive computational part. It would help to get an idea, how such a formula would look like, and how they are implemented, to give the reader context about this problem. Furthermore, the word "node" is used quite often in the paper, so it should be made clear, what this refers to exactly.
+
+--- Q6 In this respect, Algorithm 1 should be made clearer: how are transition rates computed? What does the bit-flip mean? delta t is computed using a "u" - where does that come from?
+
+-- Q7 The statistics are described, but how would a user interpret them/make use of them for themselves? What is this shared associative structure that the model is updating? Maybe a diagram would be helpful for visualization?
+
+-- Q8 How is the parallelization for GPUs actually done? In the section MaBoSS.GPU, it is described, why there was no parallelization over the Boolean functions, but not about the rest. In the MPI section, it states, that each thread is assigned to compute a single trajectory at once. I would assume that this is also true for the GPU implementation, this should, however, be made clear.
+
+-- Q9 It is stated that synthetic models with up to 1000 nodes were created. The synthetic models themselves are available, however, the description of the chosen models is also important to be mentioned in the paper: I would suggest a table that lists the most important features of the different models (size, nodes, formula sizes, how many different models were actually taken into account, ..) that were created (this table can also include the characteristics of the 3 real-world models to put in perspective). 
+
+-- Q10 The legend in the figures needs to be more specific to be able to interpret the figures better: e.g. how many synthetic models? (are the 19 points the respective models?)
+
+-- Q11 In Figure1, the High-End NVIDIA TESLA is either slower or as fast as the consumer grade laptop GPU. Is this purely due to the compilation time (as Figure 2 would suggest, that it makes a difference)? 
+
+-- Q12 Please ellaborate more on the last point in Figure 5, that seems to be an outlier. Which synthetic model is this? Is it also found in the earlier figures? 
+
+-- Q13 There is no demonstration of how a user would actually deal with the code - especially since the GPU version is based on a hard-coded implementation of the rules. A demonstrative example would help to get an idea, how a user would actually get started, and how deep he needs to dig into the code - especially for a biological audience, accessability of such tools is an important point
+
+
+Minor issues:
+
+- simulation complexty first point: what is m in O(m*n^2)? should this be u?
+- "the total amount of trajectory tasks is evenly split among the MPI nodes, adding a second layer of parallelism" - how is this even split achieved?
+- Fig 2: what is a runtime GPU code compilation?
+- Fig 3: how does "increasing the number of nodes" increase the complexity of the simulation? the word "OR" does not make sense to me in this case 
+- Fig 3: The y-axis tells me, that we are looking at a percentage. The legend of the figure, however, claims to show the "time spent in the runtime compilation", which reads as an absolute number. This is probably meant as "time spent in the runtime compilation in relation to the total runtime" or something like that.
+- Fig 4: how many threads were used? (put this info in the legend as well not just the text)
+
+
+
+
+Reviewer 2
+Šmelko et al. present two new implementations of their MaBoSS application, used for
+simulating stochastic asynchronous Boolean networks. They are able to show their new GPU and
+MPI implementations substantially outperform the original, considering the network size in
+number of nodes, while the GPU implementation is additionally able to maintain this
+performance despite formulae complexity. In the current state of the art, where large Boolean
+networks can be automatically generated from interaction databases and large experimental
+datasets, this contribution is a valuable one. The following comments should be addressed:
+
+1. A concern is that the provided background is insufficient for the applicability and
+usefulness of the software to be apparent to the broader audience of BMC
+Bioinformatics. The authors should add more to provide context and insight into the
+interpretation and use of MaBoSS output, for those not already familiar with the previous
+MaBoSS versions.
+
+2. Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a
+linear scale. The linear relationships claimed in the statement “We observed that the
+compilation time is linearly dependent on the number of nodes and formula lengths
+(measured in the number of occurring nodes).” is not clear from the provided figures, and
+should be clarified or, for example provide Figure 3 with a linear-linear or log-log scale.
+
+3. Software:
+
+3.1. The MaBoSS.GPU README could do with a link to documentation.
+
+3.2. Since the authors have disabled issue tracking on their github repositories, I urge
+them to add a contact method to sysbio-curie/hpcmaboss-artifact and
+sysbio-curie/MaBoSS.GPU, for users to obtain assistance and provide feedback,
+including bug reports.
+
+3.3. The install instructions (sysbio-curie/hpcmaboss-artifact) include the use of sudo
+for installing R packages with “install.packages”, which is in most cases
+unnecessary and likely to cause permission issues down the line.
+
+3.4. It is not clear whether the version provided via the colomoto conda repository is
+MPI enabled, so a clarification is needed.
+
+3.5. I was able to successfully compile MaBoSS with MPI enabled, however I was not
+able to compile MaBoSS.GPU in a Linux environment, the compile process
+exiting with the error:
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/MaBoSS.GPU.dir/src/main.cpp.o -o
+MaBoSS.GPU -L/usr/local/cuda-12.4/targets/x86_64-linux/lib/stubs
+-L/usr/local/cuda-12.4/targets/x86_64-linux/lib libMaBoSSGCore.a -lcuda
+-lcudart -lnvrtc -lnvJitLink -lcudadevrt -lcudart_static -lrt -lpthread -ldl
+/usr/bin/ld: libMaBoSSGCore.a(simulation_runner.cu.o): in function
+`simulation_runner::run_simulation(stats_composite&, kernel_wrapper&,
+kernel_wrapper&, kernel_wrapper&)':
+tmpxft_000031e7_00000000-6_simulation_runner.cudafe1.cpp:(.text+0x84f):
+undefined reference to
+`stats_composite::process_batch(thrust::THRUST_200302_500_NS::device_ptr<unsign
+ed int>, thrust::THRUST_200302_500_NS::device_ptr<float>,
+thrust::THRUST_200302_500_NS::device_ptr<float>,
+thrust::THRUST_200302_500_NS::device_ptr<unsigned int>,
+thrust::THRUST_200302_500_NS::device_ptr<trajectory_status>, int)'
+collect2: error: ld returned 1 exit status
+While this may be a user fault, I ask the authors to check if there are any errors in
+the current repository to cause a “undefined reference” error.
+
+4. The manuscript was well written, however I found the following sentence could be
+improved: “More recently, thanks to advances in databases listing such interactions [5, 6]
+and to experimental techniques providing information on a bigger number of
+components, the automatic methods have been designed to infer Boolean formulas from
+the constraints encoded in the knowledge and the experimental data [7–9], allowing
+construction of large Boolean models.”
+
+5. Finally, to improve accessibility, the following could do with explanation: variables “u”
+and “δt” in Algorithm 1, “PRAM”, “CNF”, “DNF”.
