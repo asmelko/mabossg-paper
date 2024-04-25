@@ -34,17 +34,17 @@ Major issues:
 
 -- Q7 The statistics are described, but how would a user interpret them/make use of them for themselves? What is this shared associative structure that the model is updating? Maybe a diagram would be helpful for visualization?
 
--- Q8 How is the parallelization for GPUs actually done? In the section MaBoSS.GPU, it is described, why there was no parallelization over the Boolean functions, but not about the rest. In the MPI section, it states, that each thread is assigned to compute a single trajectory at once. I would assume that this is also true for the GPU implementation, this should, however, be made clear.
+X -- Q8 How is the parallelization for GPUs actually done? In the section MaBoSS.GPU, it is described, why there was no parallelization over the Boolean functions, but not about the rest. In the MPI section, it states, that each thread is assigned to compute a single trajectory at once. I would assume that this is also true for the GPU implementation, this should, however, be made clear.
 
 -- Q9 It is stated that synthetic models with up to 1000 nodes were created. The synthetic models themselves are available, however, the description of the chosen models is also important to be mentioned in the paper: I would suggest a table that lists the most important features of the different models (size, nodes, formula sizes, how many different models were actually taken into account, ..) that were created (this table can also include the characteristics of the 3 real-world models to put in perspective). 
 
--- Q10 The legend in the figures needs to be more specific to be able to interpret the figures better: e.g. how many synthetic models? (are the 19 points the respective models?)
+X -- Q10 The legend in the figures needs to be more specific to be able to interpret the figures better: e.g. how many synthetic models? (are the 19 points the respective models?)
 
--- Q11 In Figure1, the High-End NVIDIA TESLA is either slower or as fast as the consumer grade laptop GPU. Is this purely due to the compilation time (as Figure 2 would suggest, that it makes a difference)? 
+X -- Q11 In Figure1, the High-End NVIDIA TESLA is either slower or as fast as the consumer grade laptop GPU. Is this purely due to the compilation time (as Figure 2 would suggest, that it makes a difference)? 
 
 -- Q12 Please ellaborate more on the last point in Figure 5, that seems to be an outlier. Which synthetic model is this? Is it also found in the earlier figures? 
 
--- Q13 There is no demonstration of how a user would actually deal with the code - especially since the GPU version is based on a hard-coded implementation of the rules. A demonstrative example would help to get an idea, how a user would actually get started, and how deep he needs to dig into the code - especially for a biological audience, accessability of such tools is an important point
+X -- Q13 There is no demonstration of how a user would actually deal with the code - especially since the GPU version is based on a hard-coded implementation of the rules. A demonstrative example would help to get an idea, how a user would actually get started, and how deep he needs to dig into the code - especially for a biological audience, accessability of such tools is an important point
 
 
 Minor issues:
@@ -74,7 +74,7 @@ Bioinformatics. The authors should add more to provide context and insight into 
 interpretation and use of MaBoSS output, for those not already familiar with the previous
 MaBoSS versions.
 
-2. Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a
+X 2. Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a
 linear scale. The linear relationships claimed in the statement “We observed that the
 compilation time is linearly dependent on the number of nodes and formula lengths
 (measured in the number of occurring nodes).” is not clear from the provided figures, and
