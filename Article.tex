@@ -277,7 +277,7 @@ This approach allows us to avoid storing the states as the keys and gives a simp
 \subsection{MaBoSS.MPI}
 
 MaBoSS.MPI is a straightforward extension of the original MaBoSS CPU code to the MPI programming interface.
-Briefly, each thread is assigned to compute a single trajectory at once, progressively collecting the results into a privatized hashmap-based statistics aggregation structure. The total amount of trajectory tasks is evenly split among the MPI nodes, adding a second layer of parallelism.
+Briefly, each MPI node is assigned to simulate the same number of trajectories (up to a remainder). These are further uniformly distributed among the CPU cores of the node, each thread progressively collecting the results into a privatized hashmap-based statistics aggregation structure. 
 
 Once all trajectory simulations are finished and the statistics are computed for each thread, the intermediate data are reduced into the final result using MPI collective operations.
 
@@ -336,7 +336,7 @@ Additionally, Figure~\ref{fig:synth} shows the total runtime of the GPU implemen
 \begin{figure}%[tbhp]
 \centering
 \includegraphics[width=3.25in]{plots/sizek_mpi.pdf}
-\caption{Scalability results of MPI implementation on Sizek model with up to 192 MPI nodes with 20 cores per node, summing up to 3840 cores.}
+\caption{Scalability results of MPI implementation on Sizek model with up to 192 MPI nodes and 20 cores per node, summing up to 3840 cores.}
 \label{fig:sizek_results}
 \end{figure}
 
@@ -345,7 +345,7 @@ Figure~\ref{fig:sizek_results} shows the efficiency of the MaBoSS.MPI implementa
 \begin{figure}%[tbhp]
 \centering
 \includegraphics[width=3.25in]{plots/synth_mpi_speedup.pdf}
-\caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes and 32 cores per MPI node.}
+\caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes, running on up to 192 MPI nodes with 32 cores per MPI node, summing up to 6144 cores.}
 \label{fig:synthetic_results}
 \end{figure}
 
