@@ -174,7 +174,7 @@ data <- subset(data, algorithm %in% c('mpi', 'new'))
 
 data$algorithm <- factor(data$algorithm, levels=c('mpi', 'new'), labels=c('MPI', 'CPU'))
 
-ggsave("plots/sizek_mpi.pdf", units="in", width=3.5, height=2,
+ggsave("plots/sizek_mpi.pdf", units="in", width=4, height=2,
 ggplot(data, aes(cpus, time, color=algorithm, shape=algorithm, group=algorithm)) +
   geom_point() +
   stat_smooth(geom='line', method='loess') +
@@ -182,7 +182,7 @@ ggplot(data, aes(cpus, time, color=algorithm, shape=algorithm, group=algorithm))
   scale_y_log10("Wall time (log-scale)", labels=c(expression('10'^1*' s'),expression('10'^2*' s'),expression('10'^3*' s'),expression('10'^4*' s')), breaks=c(10,100,1000,10000)) +
   scale_color_brewer("Software", palette='Dark2') +
   scale_shape("Software") +
-  theme_cowplot(font_size=5) +
+  theme_cowplot(font_size=9) +
   theme(
     panel.grid.major=element_line(size=.2, color='#cccccc'),
   )
@@ -192,14 +192,14 @@ data <- read.table('data/mpi_synth.tsv', header=T)
 
 data$algorithm <- factor(data$algorithm, levels=c('mpi'), labels=c('MPI'))
 
-ggsave("plots/synth_mpi.pdf", units="in", width=3.25, height=2,
+ggsave("plots/synth_mpi.pdf", units="in", width=4, height=2,
 ggplot(data, aes(cpus, time*cpus, color=algorithm, shape=algorithm, group=algorithm)) +
   geom_point() +
   scale_x_log10("Cores (log-scale)") +
   scale_y_log10("Total wall time (all CPUs, log-scale)", labels=c(expression('1 x 10'^3*' s'),expression('3 x 10'^3*' s'),expression('1 x 10'^4*' s'),expression('3 x 10'^4*' s')), breaks=c(1000,3000,10000,30000)) +
   scale_color_brewer("Software", palette='Dark2') +
   scale_shape("Software") +
-  theme_cowplot(font_size=5) +
+  theme_cowplot(font_size=9) +
   theme(
     panel.grid.major=element_line(size=.2, color='#cccccc'),
   )
@@ -207,14 +207,14 @@ ggplot(data, aes(cpus, time*cpus, color=algorithm, shape=algorithm, group=algori
 
 base = 69895
 
-ggsave("plots/synth_mpi_speedup.pdf", units="in", width=3.25, height=2,
+ggsave("plots/synth_mpi_speedup.pdf", units="in", width=4, height=2,
 ggplot(data, aes(cpus, 32*base/time/cpus, color=algorithm, shape=algorithm, group=algorithm)) +
   geom_point() +
   scale_x_log10("Cores (log-scale)") +
   scale_y_log10("Speedup per core (log-scale)", labels = function (x) paste0(x,"x")) +
   scale_color_brewer("Software", palette='Dark2') +
   scale_shape("Software") +
-  theme_cowplot(font_size=5) +
+  theme_cowplot(font_size=9) +
   theme(
     panel.grid.major=element_line(size=.2, color='#cccccc'),
   )
