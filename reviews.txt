@@ -51,9 +51,9 @@ Minor issues:
 
 X - simulation complexty first point: what is m in O(m*n^2)? should this be u?
 - "the total amount of trajectory tasks is evenly split among the MPI nodes, adding a second layer of parallelism" - how is this even split achieved?
-- Fig 2: what is a runtime GPU code compilation?
-- Fig 3: how does "increasing the number of nodes" increase the complexity of the simulation? the word "OR" does not make sense to me in this case 
-- Fig 3: The y-axis tells me, that we are looking at a percentage. The legend of the figure, however, claims to show the "time spent in the runtime compilation", which reads as an absolute number. This is probably meant as "time spent in the runtime compilation in relation to the total runtime" or something like that.
+X - Fig 2: what is a runtime GPU code compilation?
+X - Fig 3: how does "increasing the number of nodes" increase the complexity of the simulation? the word "OR" does not make sense to me in this case 
+X - Fig 3: The y-axis tells me, that we are looking at a percentage. The legend of the figure, however, claims to show the "time spent in the runtime compilation", which reads as an absolute number. This is probably meant as "time spent in the runtime compilation in relation to the total runtime" or something like that.
 - Fig 4: how many threads were used? (put this info in the legend as well not just the text)
 
 

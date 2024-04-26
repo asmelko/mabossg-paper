@@ -121,7 +121,7 @@ for (m in c("NVIDIA RTX 3070 Laptop (MaBoSS.GPU)", "NVIDIA Tesla A100 (MaBoSS.GP
         ggplot(data_c, aes(x=nodes,y=ratio, color=sample_count, shape=sample_count)) +
         geom_point(size=point_size) +
         geom_line(linewidth=line_size) +
-        xlab("Nodes count (log-scale)")+
+        xlab("Nodes count")+
         ylab("% of total time compiling (log-scale)")+
         labs(color="Simulated Trajectories", shape="Simulated Trajectories") +
         #scale_color_manual(values=RColorBrewer::brewer.pal(9,'YlGnBu')[2:9]) +
