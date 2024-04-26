@@ -49,7 +49,7 @@ X -- Q13 There is no demonstration of how a user would actually deal with the co
 
 Minor issues:
 
-- simulation complexty first point: what is m in O(m*n^2)? should this be u?
+X - simulation complexty first point: what is m in O(m*n^2)? should this be u?
 - "the total amount of trajectory tasks is evenly split among the MPI nodes, adding a second layer of parallelism" - how is this even split achieved?
 - Fig 2: what is a runtime GPU code compilation?
 - Fig 3: how does "increasing the number of nodes" increase the complexity of the simulation? the word "OR" does not make sense to me in this case 
@@ -89,14 +89,14 @@ them to add a contact method to sysbio-curie/hpcmaboss-artifact and
 sysbio-curie/MaBoSS.GPU, for users to obtain assistance and provide feedback,
 including bug reports.
 
-3.3. The install instructions (sysbio-curie/hpcmaboss-artifact) include the use of sudo
+X 3.3. The install instructions (sysbio-curie/hpcmaboss-artifact) include the use of sudo
 for installing R packages with “install.packages”, which is in most cases
 unnecessary and likely to cause permission issues down the line.
 
 3.4. It is not clear whether the version provided via the colomoto conda repository is
 MPI enabled, so a clarification is needed.
 
-3.5. I was able to successfully compile MaBoSS with MPI enabled, however I was not
+X 3.5. I was able to successfully compile MaBoSS with MPI enabled, however I was not
 able to compile MaBoSS.GPU in a Linux environment, the compile process
 exiting with the error:
 /usr/bin/c++ -O3 -DNDEBUG CMakeFiles/MaBoSS.GPU.dir/src/main.cpp.o -o

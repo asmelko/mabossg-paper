@@ -1,15 +1,26 @@
+- Extend literature in the intro (R1 Q1)
+- More detailed background 
+-- Add a new background subsection describing CPU impl (R1 Q2,3,7)
+-- Elaborate more on MaBoSS output (perhaps a new subsection with plotted outputs) (R1 Q4,7 R2 Q1)
+-- Revise the algorithm (R1 Q5,6)
+- Revise GPU stuff (R1 Q8,10,11,13 R2 Q2,3.1,3.3,3.5)
+- Revise MPI stuff (R2 Q3.2,3.4)
+- in Results add a table with models we used ? (R1 Q9)
+- explain the MPI outlier (remeasure?) (R1 Q12) 
+- minor stuff (rest)
+
 First of all, we would like to thank the reviewers for their consideration of our paper and detailed remarks. We have addressed them in our paper revision. The individual answers are in the following. Minor remarks that were simply fixed in the paper and required no additional comments are omitted.
 
 Reviewer #1:
 
 Q: How is the parallelization for GPUs actually done? In the section MaBoSS.GPU, it is described, why there was no parallelization over the Boolean functions, but not about the rest. In the MPI section, it states, that each thread is assigned to compute a single trajectory at once. I would assume that this is also true for the GPU implementation, this should, however, be made clear.
-A: You are right, we included this piece of information into the last paragraph of Simulation section.
+A: You are right, we included this piece of information in the last paragraph of Simulation section.
 
 Q: The legend in the figures needs to be more specific to be able to interpret the figures better: e.g. how many synthetic models? (are the 19 points the respective models?)
 A: yes, the x-axis shows multiple synthetic models of various sizes. We added this to Figure 2.
 
 Q: In Figure1, the High-End NVIDIA TESLA is either slower or as fast as the consumer grade laptop GPU. Is this purely due to the compilation time (as Figure 2 would suggest, that it makes a difference)? 
-A: You are right. You can see for yourself by comparing gpu_out_real.csv and gpu_out_real_a100.csv files in the artifact. We are unsure why the compilation takes longer for high-end GPU than for laptop GPU, after all, it is a proprietary piece of software. Perhaps the loading of shared libraries takes a different amount of time for the operating systems... Due to the uncertainty and the fact that the difference is in hundreds of milliseconds, we do not see this as a detail worth explicitly mentioning in the paper.
+A: You are right. You can see for yourself by comparing gpu_out_real.csv and gpu_out_real_a100.csv files in the artifact. We are unsure why the compilation takes longer for high-end GPU than for laptop GPU, after all, it is a proprietary piece of software. Perhaps the loading of shared libraries takes a different amount of time for the operating systems... We added a note in the Performance of MaBoSS.GPU section.
 
 Q: There is no demonstration of how a user would actually deal with the code - especially since the GPU version is based on a hard-coded implementation of the rules. A demonstrative example would help to get an idea, how a user would actually get started, and how deep he needs to dig into the code - especially for a biological audience, accessability of such tools is an important point
 A: Respectfully, it is not true that the GPU version is based on any hard-coded implementation. The compilation of the rules happens during the runtime without any user intervention. We included this note in the second paragraph of the Simulation section.
@@ -18,3 +29,7 @@ Reviewer #2:
 
 Q: Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a linear scale. The linear relationships claimed in the statement “We observed that the compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes).” is not clear from the provided figures, and should be clarified or, for example provide Figure 3 with a linear-linear or log-log scale.
 A: Thanks for pointing out the wrong scale in the plot, it is a linear scale. Regarding the linear dependency, it can not be seen from Fig 3 since it shows compilation time percentages rather than the absolute values. Therefore, plotting a linear-linear scale would not show any linear dependency. Nevertheless, the stated linear dependency is indeed there and we observed it from the plots which we did not include in the paper. The general idea why it holds is that increasing the number of nodes by a value of x adds O(x) new lines to a source file which needs to be compiled. We included this explanation in the paper.
+
+Q: I was able to successfully compile MaBoSS with MPI enabled, however I was not able to compile MaBoSS.GPU in a Linux environment.
+A: Thanks, compiling with the newest CUDA version revealed a bug in the Thrust dependency. We committed a fix.
+
