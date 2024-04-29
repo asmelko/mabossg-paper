@@ -183,7 +183,7 @@ The main contributions comprise two new implementations of MaBoSS:
     \item MaBoSS.MPI, a parallel implementation of MaBoSS which can scale to multinode environments, such as large CPU clusters.
 \end{itemize}
 
-The source code of the proposed implementations is publicly available at their respective GitHub repositories\footnote{\url{https://github.com/sysbio-curie/MaBoSS.GPU}, \url{https://github.com/sysbio-curie/MaBoSS-env-2.0}}. We also provide the scripts, presented plots, data and instructions to reproduce the benchmarks in the replication package\footnote{\url{https://github.com/sysbio-curie/hpcmaboss-artifact}}.
+The source code of the proposed implementations is publicly available at their respective GitHub repositories\footnote{\url{https://github.com/sysbio-curie/MaBoSS.GPU}, \url{https://github.com/sysbio-curie/MaBoSS}}. We also provide the scripts, presented plots, data and instructions to reproduce the benchmarks in the replication package\footnote{\url{https://github.com/sysbio-curie/hpcmaboss-artifact}}.
 
 To showcase the utility of the new implementations, we performed benchmarking on both existing models and large-scale synthetic models. As the main results, MaBoSS.GPU provided over 200\texttimes\ speedup over the current version of MaBoSS on a wide range of models using contemporary GPU accelerators, and MaBoSS.MPI is capable of almost linear performance scaling with added HPC resources, allowing similar speedups by utilizing the current HPC infrastructures.
 
