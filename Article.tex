@@ -220,7 +220,8 @@ MaBoSS algorithm simulates the above process to produce stochastic \emph{traject
 \end{algorithmic}
 \end{algorithm}
 
-To obtain a good overview of the Markovian process, multiple trajectories are generated and aggregated in compound trajectory statistics. Commonly obtained statistics include:
+To obtain a good overview of the Markovian process, we apply the Gillespie stochastic simulation algorithm\cite{gillespie1976general} (or kinetic Monte-Carlo\cite{young1966monte}
+) on the Boolean state space. Multiple trajectories are generated and aggregated in compound trajectory statistics. Commonly obtained statistics include:
 \begin{itemize}
     \item \emph{Network state probabilities on a time window} --- Trajectory states are divided by their transition times into time windows based on the time intervals specified by a window size. For each window, the probability of each state is computed as the duration spent in the state divided by the window size. The probabilities of the corresponding windows are then averaged across all subtrajectories.
     \item \emph{Final states} --- The last sampled states from the trajectories are used to compute a final state distribution.
