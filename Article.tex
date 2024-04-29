@@ -197,6 +197,9 @@ A Boolean signaling model consists of $n$ nodes that are either active or inacti
 
 Interactions in the model are described as transitions between two states. A single state can have multiple transitions to other states with assigned transition probabilities. In turn, a Boolean network is represented as a directed weighted graph $G = (\mathcal{S}, \rho)$, where $\rho: \mathcal{S} \times \mathcal{S} \rightarrow [0, \infty)$ is a transition function generating \emph{transition rates}. For convenience, it holds that:
 \[ \rho(S, S') = 0 \iff \text{there is no transition from}\ S\ \text{to}\ S' \]
+
+
+\subsection{MaBoSS: Markovian Boolean Stochastic Simulator}
 MaBoSS simulates the \emph{asynchronous update strategy}, where at most a single node changes its value in each transition --- consequently, a state $S$ can have at most $n$ possible transitions.
 
 To determine the possible transitions, each node follows the \emph{Boolean logic} $\mathcal{B}_i: \mathcal{S} \rightarrow [0, \infty)$, which determines the expected Poisson-process rate of transitioning to the other value. If $\mathcal{B}_i(S) = 0$, then the transition at node $i$ is not allowed in state $S$.
@@ -252,6 +255,10 @@ The aggregation of the statistics from the simulations is typically done by upda
 If the associative structure is implemented as a hashmap, the updates can be done in $\mathcal{O}(1)$ for a single process. With multiple processors, the algorithm may hold partial versions of the hashmap for each processor, and aggregate all of them at the end of the computation, which can be done in $\mathcal{O}(\log{c} \cdot m)$ using $c$ processors, assuming the maximal size of statistic to be $m$.
 
 As an interesting detail, the hash structures pose a surprising constant-factor overhead. In networks where most nodes are internal, the hash map may be replaced by a fixed-size multidimensional array that holds an element for all possible combinations of external node values (basically forming a multidimensional histogram). We discuss the impact of this optimization in the next section.
+
+
+\subsubsection{MaBoSS CPU Implementation}
+MaBoSS is multi-core...
 
 \section{Implementation}\label{sec:implementation}
 
