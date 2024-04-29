@@ -258,7 +258,7 @@ As an interesting detail, the hash structures pose a surprising constant-factor 
 
 
 \subsubsection{MaBoSS CPU Implementation}
-MaBoSS is multi-core...
+MaBoSS was initially developed as a single core application, but very quickly got a basic parallelism to exploit the multi-core nature of modern CPUs. In this parallel implementation the simulation of trajectories, as well as the statistics aggregation, was distributed on multiple cores (controlled by a simulation parameter) using POSIX threads. In the following sections of the papers, we will refer to this implementation as the CPU version. 
 
 \section{Implementation}\label{sec:implementation}
 
