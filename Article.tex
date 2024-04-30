@@ -301,11 +301,27 @@ To evaluate the impact of the implemented optimizations, we present the results 
 
 \subsection{Benchmarking Methodology}
 
-For the benchmarks, we used $3$ real-world models of $10$, $87$ and $133$ nodes (\textsc{cellcycle}~\cite{faure2006cellcycle}, \textsc{sizek}~\cite{sizek2019boolean} and \textsc{Montagud}~\cite{montagud2022prostate}). In order to test the scalability of the GPU and MPI implementation, we also created several synthetic models with up to $1000$ nodes. Synthetic models were designed in a way such that the length of each trajectory is predictable, and the models have no stable states. Also, the number of non-internal nodes was kept low (10 nodes) to enable the usage of the histogram optimization. The synthetic models together with their Python generator are available in the replication package.
+For the benchmarks, we used $3$ real-world models of $10$, $87$ and $133$ nodes (\textsc{cellcycle}~\cite{faure2006cellcycle}, \textsc{sizek}~\cite{sizek2019boolean} and \textsc{Montagud}~\cite{montagud2022prostate}). In order to test the scalability of the GPU and MPI implementation, we also created several synthetic models with up to $1000$ nodes. Synthetic models were designed in a way such that the length of each simulated trajectory is predictable, and the models have no stable states. The average length was arbitrarily set to $100$, which creates reasonably-sized serial tasks to saturate the tested hardware well. Also, the number of non-internal nodes was kept low (5 nodes) to enable the usage of the histogram optimization. The synthetic models together with their Python generator are available in the replication package. Table~\ref{tab:model_features} summarizes the main features of the benchmarked models.
 
 The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used as the final result.
 
 The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer\footnote{\url{https://www.bsc.es/marenostrum/marenostrum}}.
+
+\begin{table}[h]
+    \begin{tabular}{l|cccc}
+        \textbf{Model}     & \textbf{\# Nodes (non-inter.)} & \textbf{\# Traj.}        & \textbf{Avg. formula size} & \textbf{Avg. traj. length} \\
+        \midrule
+        \textsc{cellcycle} & $10$ $(4)$                     & $1$M                     & $4$                        & $26$                       \\
+        \textsc{sizek}     & $87$ $(4)$                     & $1$M                     & $22$                       & $525$                      \\
+        \textsc{Montagud}  & $133$ $(3)$                    & $1$M                     & $4$                        & $197$                      \\
+        \hline
+        \emph{Synthetic}   & $10 - 1000$ $(5)$              & $1\text{M} - 10\text{M}$ & $10 - 100$                 & $100$                      \\
+        \bottomrule
+    \end{tabular}
+    \centering
+    \caption{Main features of the synthetic and real-world models used in the benchmarks. It includes the size of models in terms of nodes and non-internal nodes, the number of simulated trajectories, the average formula size measured as the arithmetic mean of present nodes in each formula, and the average length of all simulated trajectories. Note that not all combinations of features for the synthetic model were used in the benchmarks, see the following figures for more details.}
+    \label{tab:model_features}
+\end{table}
 
 \subsection{Performance of MaBoSS.GPU}
 
@@ -323,7 +339,7 @@ It is worth noting that the datacenter GPU performs worse than the laptop GPU. B
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{plots/nodes.pdf}
-    \caption{Wall time comparison of MaBoSS and MaBoSS.GPU on synthetic models with sizes ranging from $10$ to $1000$ nodes (x-axis). Each model is simulated with 1 million trajectories. The two panels differ by the inclusion of the runtime compilation of the model logic, showing its impact on total run time.}
+    \caption{Wall time comparison of MaBoSS and MaBoSS.GPU on synthetic models with sizes ranging from $10$ to $1000$ nodes (x-axis) and the formula size of $10$. Each model is simulated with 1 million trajectories. The two panels differ by the inclusion of the runtime compilation of the model logic, showing its impact on total run time.}
     \label{fig:synth}
 \end{figure}
 
@@ -336,7 +352,7 @@ Figure~\ref{fig:synth} shows much finer performance progression on synthetic mod
     \label{fig:comp}
 \end{figure}
 
-Additionally, Figure~\ref{fig:synth} shows the total runtime of the GPU implementation including the runtime compilation step. Comparing the panels, we observe that the relative runtime compilation overhead quickly disappears with increasing model size. Figure~\ref{fig:comp} shows the results of more detailed benchmarks for this scenario, as run on the NVIDIA Tesla A100 GPU. We observed that the compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes), which can be simply explained by the fact that these model properties extend source files that need to be compiled by a linear factor. Notably, as soon as the simulation becomes more computationally complex (e.g., by increasing the number of nodes or simulated trajectories), the compilation time becomes relatively negligible even for models with unrealistically long formulae. This suggests that the runtime compilation is a viable optimization methodology also for much larger models.
+Additionally, Figure~\ref{fig:synth} shows the total runtime of the GPU implementation including the runtime compilation step. Comparing the panels, we observe that the relative runtime compilation overhead quickly disappears with increasing model size. Figure~\ref{fig:comp} shows the results of more detailed benchmarks for this scenario, as run on the NVIDIA Tesla A100 GPU. We observed that the compilation time is linearly dependent on the number of nodes and formula lengths, which can be simply explained by the fact that these model properties extend source files that need to be compiled by a linear factor. Notably, as soon as the simulation becomes more computationally complex (e.g., by increasing the number of nodes, the number of simulated trajectories or their average length), the compilation time becomes relatively negligible even for models with unrealistically long formulae. This suggests that the runtime compilation is a viable optimization methodology also for much larger models.
 
 \subsection{Performance of MaBoSS.MPI}
 
@@ -353,7 +369,7 @@ Figure~\ref{fig:sizek_results} shows the efficiency of the MaBoSS.MPI implementa
 \begin{figure}%[tbhp]
 \centering
 \includegraphics[width=3.25in]{plots/synth_mpi_speedup.pdf}
-\caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes, running on up to 192 MPI nodes with 32 cores per MPI node, summing up to 6144 cores.}
+\caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes and the formula size of 10, running on up to 192 MPI nodes with 32 cores per MPI node, summing up to 6144 cores.}
 \label{fig:synthetic_results}
 \end{figure}
 

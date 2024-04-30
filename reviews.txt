@@ -36,7 +36,7 @@ Major issues:
 
 X -- Q8 How is the parallelization for GPUs actually done? In the section MaBoSS.GPU, it is described, why there was no parallelization over the Boolean functions, but not about the rest. In the MPI section, it states, that each thread is assigned to compute a single trajectory at once. I would assume that this is also true for the GPU implementation, this should, however, be made clear.
 
--- Q9 It is stated that synthetic models with up to 1000 nodes were created. The synthetic models themselves are available, however, the description of the chosen models is also important to be mentioned in the paper: I would suggest a table that lists the most important features of the different models (size, nodes, formula sizes, how many different models were actually taken into account, ..) that were created (this table can also include the characteristics of the 3 real-world models to put in perspective). 
+X -- Q9 It is stated that synthetic models with up to 1000 nodes were created. The synthetic models themselves are available, however, the description of the chosen models is also important to be mentioned in the paper: I would suggest a table that lists the most important features of the different models (size, nodes, formula sizes, how many different models were actually taken into account, ..) that were created (this table can also include the characteristics of the 3 real-world models to put in perspective). 
 
 X -- Q10 The legend in the figures needs to be more specific to be able to interpret the figures better: e.g. how many synthetic models? (are the 19 points the respective models?)
 
@@ -82,7 +82,7 @@ should be clarified or, for example provide Figure 3 with a linear-linear or log
 
 3. Software:
 
-3.1. The MaBoSS.GPU README could do with a link to documentation.
+X 3.1. The MaBoSS.GPU README could do with a link to documentation.
 
 3.2. Since the authors have disabled issue tracking on their github repositories, I urge
 them to add a contact method to sysbio-curie/hpcmaboss-artifact and
