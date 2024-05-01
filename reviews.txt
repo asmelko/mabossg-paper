@@ -26,13 +26,13 @@ Major issues:
 
 -- Q3 As mentioned in the literature point, the code is based on Gillespies SSA. The possible drawbacks (e.g., for low abundant phenotypes, an exessively large number of trajectories is required) should be discussed. This is furthermore strengthening the point of the paper, since running on multiple nodes/GPUs enables this exessively large number of trajectories.
 
---- Q4 how does the code actually deal with circular steady states?
+X --- Q4 how does the code actually deal with circular steady states?
 
 -- Q5 The Boolean signaling modeling paragraph needs to be extended in more details: To me it is not clear, why e.g., the transition rates should be in [0, inf) and not [0,1], since we are talking about probabilities. The concept of asynchronous updating should be made a bit clearer as well. Furthermore, it is often referred to the evaluation of the Boolean formulas as the most expensive computational part. It would help to get an idea, how such a formula would look like, and how they are implemented, to give the reader context about this problem. Furthermore, the word "node" is used quite often in the paper, so it should be made clear, what this refers to exactly.
 
 --- Q6 In this respect, Algorithm 1 should be made clearer: how are transition rates computed? What does the bit-flip mean? delta t is computed using a "u" - where does that come from?
 
--- Q7 The statistics are described, but how would a user interpret them/make use of them for themselves? What is this shared associative structure that the model is updating? Maybe a diagram would be helpful for visualization?
+X -- Q7 The statistics are described, but how would a user interpret them/make use of them for themselves? What is this shared associative structure that the model is updating? Maybe a diagram would be helpful for visualization?
 
 X -- Q8 How is the parallelization for GPUs actually done? In the section MaBoSS.GPU, it is described, why there was no parallelization over the Boolean functions, but not about the rest. In the MPI section, it states, that each thread is assigned to compute a single trajectory at once. I would assume that this is also true for the GPU implementation, this should, however, be made clear.
 
@@ -68,7 +68,7 @@ performance despite formulae complexity. In the current state of the art, where 
 networks can be automatically generated from interaction databases and large experimental
 datasets, this contribution is a valuable one. The following comments should be addressed:
 
-1. A concern is that the provided background is insufficient for the applicability and
+X 1. A concern is that the provided background is insufficient for the applicability and
 usefulness of the software to be apparent to the broader audience of BMC
 Bioinformatics. The authors should add more to provide context and insight into the
 interpretation and use of MaBoSS output, for those not already familiar with the previous
@@ -84,7 +84,7 @@ should be clarified or, for example provide Figure 3 with a linear-linear or log
 
 X 3.1. The MaBoSS.GPU README could do with a link to documentation.
 
-3.2. Since the authors have disabled issue tracking on their github repositories, I urge
+X 3.2. Since the authors have disabled issue tracking on their github repositories, I urge
 them to add a contact method to sysbio-curie/hpcmaboss-artifact and
 sysbio-curie/MaBoSS.GPU, for users to obtain assistance and provide feedback,
 including bug reports.
@@ -93,7 +93,7 @@ X 3.3. The install instructions (sysbio-curie/hpcmaboss-artifact) include the us
 for installing R packages with “install.packages”, which is in most cases
 unnecessary and likely to cause permission issues down the line.
 
-3.4. It is not clear whether the version provided via the colomoto conda repository is
+X 3.4. It is not clear whether the version provided via the colomoto conda repository is
 MPI enabled, so a clarification is needed.
 
 X 3.5. I was able to successfully compile MaBoSS with MPI enabled, however I was not

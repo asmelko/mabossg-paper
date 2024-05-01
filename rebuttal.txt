@@ -28,6 +28,12 @@ A: Respectfully, it is not true that the GPU version is based on any hard-coded 
 Q: It is stated that synthetic models with up to 1000 nodes were created. The synthetic models themselves are available, however, the description of the chosen models is also important to be mentioned in the paper: I would suggest a table that lists the most important features of the different models (size, nodes, formula sizes, how many different models were actually taken into account, ..) that were created (this table can also include the characteristics of the 3 real-world models to put in perspective). 
 A: We included the proposed table in Results section and extended the first paragraph in the Benchmarking Methodology to describe the table fields.
 
+Q: The statistics are described, but how would a user interpret them/make use of them for themselves? What is this shared associative structure that the model is updating? Maybe a diagram would be helpful for visualization?
+A: We added a new section Statistics output and visualization, which includes how the statistics output is represented in the code and how a user can interpret and visualize it.
+
+Q: How does the code actually deal with circular steady states?
+A: If a model contains circular steady states, simulated trajectories that would indefinitely transition over circular states will eventually reach the maximum time and their simulation stops. Their statistics are further computed without any change. The original paper (Stoll et al.) discusses the ways how to detect circular steady states from the computed statistics, but we think that describing these methods is out of the scope of this paper. Therefore, we included general information about circular steady states in Statistics output and visualization section and referenced the original paper for the reader who wants to know more detailed information. 
+
 Reviewer #2:
 
 Q: Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a linear scale. The linear relationships claimed in the statement “We observed that the compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes).” is not clear from the provided figures, and should be clarified or, for example provide Figure 3 with a linear-linear or log-log scale.
@@ -38,3 +44,12 @@ A: Thanks, compiling with the newest CUDA version revealed a bug in the Thrust d
 
 Q: The MaBoSS.GPU README could do with a link to documentation.
 A: We added a new section to README with a high-level architectural overview.
+
+Q: Since the authors have disabled issue tracking on their github repositories, I urge them to add a contact method to sysbio-curie/hpcmaboss-artifact and sysbio-curie/MaBoSS.GPU, for users to obtain assistance and provide feedback, including bug reports.
+A: This was a mistake, we now have enabled issue tracking on MaBoSS.GPU and hpcmaboss-artifact repositories. Thanks for reminding us. 
+
+Q:  It is not clear whether the version provided via the colomoto conda repository is MPI enabled, so a clarification is needed.
+A: This is something we have been considering, but we have not moved forward yet. We will most likely have to create specific conda packages which are MPI enabled, in addition to the classic ones. Same thing for MaBoSS.GPU. We also need to think about this for the colomoto docker, but again it might not be straightforward. For now, we think that the target users of these new implementations are knowledgeable enough to install them manually. 
+
+Q: A concern is that the provided background is insufficient for the applicability and usefulness of the software to be apparent to the broader audience of BMC Bioinformatics. The authors should add more to provide context and insight into the interpretation and use of MaBoSS output, for those not already familiar with the previous MaBoSS versions.
+A: We included a new section Statistics output and visualization.

@@ -205,7 +205,7 @@ MaBoSS simulates the \emph{asynchronous update strategy}, where at most a single
 To determine the possible transitions, each node follows the \emph{Boolean logic} $\mathcal{B}_i: \mathcal{S} \rightarrow [0, \infty)$, which determines the expected Poisson-process rate of transitioning to the other value. If $\mathcal{B}_i(S) = 0$, then the transition at node $i$ is not allowed in state $S$.
 Given this formalization, the simulation can be also viewed as a continuous-time Markov process.
 
-MaBoSS algorithm simulates the above process to produce stochastic \emph{trajectories}: sequences of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state, and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends either by a timeout when reaching the maximal allowed time, or by reaching a fixed point state with no outgoing transitions. The algorithm for a single iteration of the trajectory simulation is given explicitly in Algorithm~\ref{alg:iter}.
+MaBoSS algorithm simulates the above process to produce stochastic \emph{trajectories}: sequences of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state, and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends either by a timeout when reaching the maximal allowed time, or by reaching a \emph{fixed point} state with no outgoing transitions. The algorithm for a single iteration of the trajectory simulation is given explicitly in Algorithm~\ref{alg:iter}.
 
 \begin{algorithm}
 \caption{A single iteration of the MaBoSS simulation of a trajectory, given the state $S$ and time $t$.}
@@ -254,11 +254,33 @@ The aggregation of the statistics from the simulations is typically done by upda
 
 If the associative structure is implemented as a hashmap, the updates can be done in $\mathcal{O}(1)$ for a single process. With multiple processors, the algorithm may hold partial versions of the hashmap for each processor, and aggregate all of them at the end of the computation, which can be done in $\mathcal{O}(\log{c} \cdot m)$ using $c$ processors, assuming the maximal size of statistic to be $m$.
 
-As an interesting detail, the hash structures pose a surprising constant-factor overhead. In networks where most nodes are internal, the hash map may be replaced by a fixed-size multidimensional array that holds an element for all possible combinations of external node values (basically forming a multidimensional histogram). We discuss the impact of this optimization in the next section.
+As an interesting detail, the hash structures pose a surprising constant-factor overhead. In networks where most nodes are internal, the hash map may be replaced by a fixed-size multidimensional array that holds an element for all possible combinations of external node values (basically forming a multidimensional histogram). We discuss the impact of this optimization in \emph{Implementation} section.
 
+\subsection{MaBoSS CPU Implementation}
 
-\subsubsection{MaBoSS CPU Implementation}
-MaBoSS was initially developed as a single core application, but very quickly got a basic parallelism to exploit the multi-core nature of modern CPUs. In this parallel implementation the simulation of trajectories, as well as the statistics aggregation, was distributed on multiple cores (controlled by a simulation parameter) using POSIX threads. In the following sections of the papers, we will refer to this implementation as the CPU version. 
+MaBoSS was initially developed as a single-core application, but very quickly it was extended with a basic parallelism to exploit the multi-core nature of modern CPUs. In this parallel implementation the simulation of trajectories, as well as the statistics aggregation, was distributed on multiple cores (controlled by a simulation parameter) using POSIX threads. In the following sections of the papers, we will refer to this implementation as the CPU version. 
+
+\subsubsection{Statistics output and visualization}
+
+Each of the three kinds of statistics is in its nature a sample from a probabilistic distribution of Boolean states. This sample is represented in code as a hash map in the CPU version, varying in the $(key, value)$ pairs according to the specific statistic. For the final states, the keys of the hash map are the states of the model, and the values are the number of times the state was sampled last in a trajectory. Such output can be visualized as a pie chart (see Figure~\ref{fig:cohen_final}). The fixed states are represented similarly, but only the fixed points are stored in the hash map as keys.
+
+\begin{figure}%[tbhp]
+    \centering
+    \includegraphics[width=3.25in]{img/cohen_piechart.png}
+    \caption{The final states pie chart shows the distribution of the last trajectory states. Labels denote which active non-internal nodes compose the state. \emph{nil} label represents the state where all non-internal nodes are inactive.}
+    \label{fig:cohen_final}
+\end{figure}
+
+The final and fixed state statistics characterize the behavior of the model at one point in time --- at the end of the simulation. The network state probabilities on a time window highlight more dynamic characteristics of the model, showing how the average trajectory evolves over the simulation time. Programmatically, it is an extension of the final state statistics but instead of one hash map, there is a hash map for each time window. The hash map values are the state durations in the specific time window aggregated over all simulated trajectories. Further, these statistics can be visualized in various ways using a line chart. Figure~\ref{fig:cohen_traj} shows which non-internal nodes are active throughout the simulation.
+
+As mentioned at the beginning of the section, if the trajectory does not reach a fixed point, the simulation is stopped after the maximal allowed time. This is a common scenario especially when some trajectories form circles, i.e. when a model has \emph{circular steady states}. A circular steady state is usually not directly visible from the state probability line charts; Stoll et al.~\cite{stoll2012continuous} proposed methods to detect them (such as plotting the state and transition entropies) but we do not discuss them further in this paper for the sake of brevity. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=3.25in]{img/cohen_nodes_trajs.png}
+    \caption{The line chart of trajectory state probabilities over time windows. Each line represents the ratio of an active non-internal node in the time window over all trajectories (e.g., at the beginning of the simulation, the \emph{Apoptosis} node is inactive in all simulated trajectories and as the time reaches the value of $10$, \emph{Apoptosis} is active in around $40\%$ of trajectories). The x-axis represents the discrete simulation time with the window width of $0.1$.}
+    \label{fig:cohen_traj}
+\end{figure}
 
 \section{Implementation}\label{sec:implementation}
 
