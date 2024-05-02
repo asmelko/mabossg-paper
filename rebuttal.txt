@@ -34,6 +34,9 @@ A: We added a new section Statistics output and visualization, which includes ho
 Q: How does the code actually deal with circular steady states?
 A: If a model contains circular steady states, simulated trajectories that would indefinitely transition over circular states will eventually reach the maximum time and their simulation stops. Their statistics are further computed without any change. The original paper (Stoll et al.) discusses the ways how to detect circular steady states from the computed statistics, but we think that describing these methods is out of the scope of this paper. Therefore, we included general information about circular steady states in Statistics output and visualization section and referenced the original paper for the reader who wants to know more detailed information. 
 
+Q: There needs to be a description about the original code. Most importantly, it is always referred to, as the CPU version. This suggests, that we are talking about a purely sequential code. In the Methodology, however, it is described to be run on a full 32-core node, which implies already some basic parallelization. This should be made clear from the beginning.
+A: Indeed, the implementation of the "CPU version" was early on parallelized to work on multiple cores, using POSIX threads. We added a new subsection to the background section (MaBoSS CPU Implementation) to describe this implementation.
+
 Reviewer #2:
 
 Q: Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a linear scale. The linear relationships claimed in the statement “We observed that the compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes).” is not clear from the provided figures, and should be clarified or, for example provide Figure 3 with a linear-linear or log-log scale.
