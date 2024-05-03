@@ -193,7 +193,7 @@ To showcase the utility of the new implementations, we performed benchmarking on
 
 % this is very cool but can we simply refer to the maboss paper? or no one took care to formalize this properly yet?
 
-A Boolean signaling model consists of $n$ \emph{nodes} that are either active or inactive, gaining binary values 1 or 0 respectively. The \emph{state} of the whole model is represented by a vector $S$ of $n$ binary values where $S_i$ represents the value of the $i$-th node. We denote the set of all possible states as $\mathcal{S} = \{0, 1\}^n$; thus $|\mathcal{S}| = 2^n$. 
+A Boolean signaling model consists of $n$ \emph{nodes}, which can represent a gene, protein or an event in a cell. Nodes are either active or inactive, gaining binary values 1 or 0 respectively. The \emph{state} of the whole model is represented by a vector $S$ of $n$ binary values where $S_i$ represents the value of the $i$-th node. We denote the set of all possible states as $\mathcal{S} = \{0, 1\}^n$; thus $|\mathcal{S}| = 2^n$. 
 
 Interactions in the model are described as transitions between two states. A single state can have multiple transitions to other states with assigned transition probabilities. In turn, a Boolean network is represented as a directed weighted graph $G = (\mathcal{S}, \rho)$, where $\rho: \mathcal{S} \times \mathcal{S} \rightarrow [0, \infty)$ is a transition function generating \emph{transition rates}. These rates define edge weights of $G$, which are used to compute the probability of a transition from state $S$ to $S'$ in the following way:
 \begin{equation}
@@ -207,7 +207,7 @@ For convenience, it holds that
 
 
 \subsection{MaBoSS: Markovian Boolean Stochastic Simulator}
-MaBoSS simulates the \emph{asynchronous update strategy}, where at most a single node changes its value in each transition. Therefore, there is a transition from $S$ to $S'$ only if it holds that 
+MaBoSS simulates the \emph{asynchronous update strategy}, where only a single node changes its value in each transition (contrary to the \emph{synchronous update strategy}, for which all nodes that can be updated are updated~\cite{stoll2012continuous}). Therefore, there is a transition from $S$ to $S'$ only if it holds that 
 \begin{equation}
     \begin{split}
 S_j \ne S'_j & \text{ for a given } j \\
@@ -219,20 +219,21 @@ Consequently, $S$ can have at most $n$ possible transitions. In programming term
 To determine the possible transition rates, each node follows the \emph{Boolean logic} $\mathcal{B}_i: \mathcal{S} \rightarrow [0, \infty)$, which determines the expected Poisson-process rate of transitioning to the other value. If $\mathcal{B}_i(S) = 0$, then the transition at node $i$ is not allowed in state $S$. 
 Given this formalization, the simulation can be also viewed as a continuous-time Markov process.
 
-The main computational part of a Boolean logic is a \emph{Boolean formula} $B: \mathcal{S} \rightarrow \{0, 1\}$, which consists of logical operators (such as \emph{and}, \emph{or}, \emph{xor}, \emph{not}) with nodes as operands. For example, 
+The main computational part of the Boolean logic is its binary function $f: \mathcal{S} \rightarrow \{0, 1\}$, which consists of logical operators (such as \emph{and}, \emph{or}, \emph{xor}, \emph{not}) with nodes as operands. For example, 
 \begin{equation}
-    B_i(S) = (S_2 \land S_3) \lor S_4 
+    f_i(S) = (S_2 \land S_3) \lor S_4 
 \end{equation}
-is a Boolean formula for node $i$, where $S_2$, $S_3$ and $S_4$ are binary values of nodes $2$, $3$ and $4$, respectively. Using the values of $B(S)$ and $S_i$, $\mathcal{B}_i(S)$ is defined by a simple rule:
+is the binary function for node $i$, having nodes $2$, $3$ and $4$ as its operands.
+The binary function of a node determines the value to which the node can transition. Thus, $S$ can transition at node $i$ at rate $r$ only if $f_i(S) \neq S_i$. Concisely, $\mathcal{B}_i$ is defined as\footnote{Generally, $\mathcal{B}_i$ can be defined using a pair of binary formulas~\cite{stoll2012continuous}: one used when a node is active and one when it is inactive. This results in a slightly more branched definition, which we omitted for brevity.}
 \begin{equation}
     \mathcal{B}_i(S) = \begin{cases}
-        0 & \text{if } S_i = B_i(S) \\
+        0 & \text{if } S_i = f_i(S) \\
         r & \text{otherwise}
     \end{cases}
     \label{eq:transition_rate}
 \end{equation}
 
-MaBoSS algorithm simulates the above process to produce stochastic \emph{trajectories}: sequences of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state, and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends either by a timeout when reaching the maximal allowed time, or by reaching a \emph{fixed point} state with no outgoing transitions. The algorithm for a single iteration of the trajectory simulation is given explicitly in Algorithm~\ref{alg:iter}.
+MaBoSS algorithm simulates the above process to produce stochastic \emph{trajectories}: sequences of states $S^0, S^1, \dots, S^k$ and time points $t^0 < t^1 < \dots < t^k$ where $t^0 = 0$ and $S^0$ is the initial state, and for each $i \in \{0, \dots, k-1\}$, $S^i$ transitions to $S^{i+1}$ at time $t^{i+1}$. The simulation ends either by a timeout when reaching the maximal allowed time, or by reaching a \emph{fixed point} state with no outgoing transitions. The algorithm for a single iteration of the trajectory simulation is given explicitly in Algorithm~\ref{alg:iter}, which is the direct application of the Gillespie stochastic simulation algorithm~\cite{gillespie1976general} (or kinetic Monte-Carlo~\cite{young1966monte}) on the Boolean state space.
 
 \begin{algorithm}
 \caption{A single iteration of the MaBoSS simulation of a trajectory, given the state $S$ and time $t$.}
@@ -241,16 +242,16 @@ MaBoSS algorithm simulates the above process to produce stochastic \emph{traject
 \Procedure{TrajectorySimulationStep}{S, t}
 \State $\rho_1 \gets \mathcal{B}_1(S), \dots, \rho_n \gets \mathcal{B}_n(S)$ \Comment compute transition rates
 \State $r \gets \text{random}([0, \sum_{i=1}^n \rho_i))$
-\State $i \gets \min_i \sum_{j=1}^{i-1} \rho_j \leq r < \sum_{j=1}^{i} \rho_j$ \Comment select index of the transition node
+\State $i \gets \min_i \sum_{j=1}^{i-1} \rho_j \leq r < \sum_{j=1}^{i} \rho_j$ \Comment randomly select the transition node
 \State $S'\gets S\ \text{with the $i$-th bit flipped}$
 \State $u \gets \text{random}([0, 1])$
-\State $\delta t \gets -\frac{\ln u}{\sum_{i=1}^n \rho_i}$ \Comment compute time to the next transition
+\State $\delta t \gets -\frac{\ln u}{\sum_{i=1}^n \rho_i}$ \Comment randomly select time to the next transition
 \State \textbf{return} $(S', t + \delta t)$
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
 
-To obtain a good overview of the Markovian process, we apply the Gillespie stochastic simulation algorithm~\cite{gillespie1976general} (or kinetic Monte-Carlo~\cite{young1966monte}) on the Boolean state space. Multiple trajectories are generated and aggregated in compound trajectory statistics. Commonly obtained statistics include:
+Multiple trajectories are generated and aggregated in compound trajectory statistics. Commonly obtained statistics include:
 \begin{itemize}
     \item \emph{Network state probabilities on a time window} --- Trajectory states are divided by their transition times into time windows based on the time intervals specified by a window size. For each window, the probability of each state is computed as the duration spent in the state divided by the window size. The probabilities of the corresponding windows are then averaged across all subtrajectories.
     \item \emph{Final states} --- The last sampled states from the trajectories are used to compute a final state distribution.
@@ -353,7 +354,11 @@ To evaluate the impact of the implemented optimizations, we present the results 
 
 For the benchmarks, we used $3$ real-world models of $10$, $87$ and $133$ nodes (\textsc{cellcycle}~\cite{faure2006cellcycle}, \textsc{sizek}~\cite{sizek2019boolean} and \textsc{Montagud}~\cite{montagud2022prostate}). In order to test the scalability of the GPU and MPI implementation, we also created several synthetic models with up to $1000$ nodes. Synthetic models were designed in a way such that the length of each simulated trajectory is predictable, and the models have no stable states. The average length was arbitrarily set to $100$, which creates reasonably-sized serial tasks to saturate the tested hardware well. Also, the number of non-internal nodes was kept low (5 nodes) to enable the usage of the histogram optimization. The synthetic models together with their Python generator are available in the replication package. Table~\ref{tab:model_features} summarizes the main features of the benchmarked models.
 
-\begin{table}
+The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used as the final result.
+
+The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer\footnote{\url{https://www.bsc.es/marenostrum/marenostrum}}.
+
+\begin{table}[h]
     \begin{tabular}{l|cccc}
         \textbf{Model}     & \textbf{\# Nodes (non-inter.)} & \textbf{\# Traj.}        & \textbf{Avg. formula size} & \textbf{Avg. traj. length} \\
         \midrule
@@ -365,13 +370,9 @@ For the benchmarks, we used $3$ real-world models of $10$, $87$ and $133$ nodes 
         \bottomrule
     \end{tabular}
     \centering
-    \caption{The main features of the synthetic and real-world models used in the benchmarks. It includes the size of models in terms of nodes and non-internal nodes, the number of simulated trajectories, the average formula size measured as the arithmetic mean of present nodes in each formula, and the average length of all simulated trajectories. Note that not all combinations of features for the synthetic model were used in the benchmarks, see the following figures for more details.}
+    \caption{The main features of the synthetic and real-world models used in the benchmarks. It includes the size of models in terms of nodes and non-internal nodes, the number of simulated trajectories, the average formula size measured as the arithmetic mean of operands count in each formula, and the average length of all simulated trajectories. Note that not all combinations of features for the synthetic model were used in the benchmarks, see the following figures for more details.}
     \label{tab:model_features}
 \end{table}
-
-The GPU implementation benchmarks were run on a datacenter-grade NVIDIA Tesla A100 GPU and a consumer-grade NVIDIA RTX 3070 Laptop GPU. The CPU implementation benchmarks were run on a 32-core Intel Xeon Gold 6130 CPU with multithreading. The CPU implementation was compiled with GCC 13.2.0, and the GPU implementation was compiled with CUDA 12.2. Each measurement was repeated $10$ times, and the average runtime was used as the final result.
-
-The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer\footnote{\url{https://www.bsc.es/marenostrum/marenostrum}}.
 
 \subsection{Performance of MaBoSS.GPU}
 

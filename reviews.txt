@@ -22,15 +22,15 @@ Major issues:
 -- The asynchronous updating scheme for Boolean rules is a simplification of the Chemical Master Equation formulation. SSA is the ansatz, which the developers chose to approach in this implementation. However, this comes with its own drawbacks, which should be pointed out in the paper. A possible drawback, e.g., would be discussed in: Gillespie, Daniel T., Andreas Hellander, and Linda R. Petzold. "Perspective: Stochastic algorithms for chemical kinetics." The Journal of chemical physics 138.17 (2013). 
 
 - A thorough discussion is necessary about the code from which this paper builds upon:
--- Q2 There needs to be a description about the original code. Most importantly, it is always referred to, as the CPU version. This suggests, that we are talking about a purely sequential code. In the Methodology, however, it is described to be run on a full 32-core node, which implies already some basic parallelization. This should be made clear from the beginning.
+X -- Q2 There needs to be a description about the original code. Most importantly, it is always referred to, as the CPU version. This suggests, that we are talking about a purely sequential code. In the Methodology, however, it is described to be run on a full 32-core node, which implies already some basic parallelization. This should be made clear from the beginning.
 
 -- Q3 As mentioned in the literature point, the code is based on Gillespies SSA. The possible drawbacks (e.g., for low abundant phenotypes, an exessively large number of trajectories is required) should be discussed. This is furthermore strengthening the point of the paper, since running on multiple nodes/GPUs enables this exessively large number of trajectories.
 
 X --- Q4 how does the code actually deal with circular steady states?
 
--- Q5 The Boolean signaling modeling paragraph needs to be extended in more details: To me it is not clear, why e.g., the transition rates should be in [0, inf) and not [0,1], since we are talking about probabilities. The concept of asynchronous updating should be made a bit clearer as well. Furthermore, it is often referred to the evaluation of the Boolean formulas as the most expensive computational part. It would help to get an idea, how such a formula would look like, and how they are implemented, to give the reader context about this problem. Furthermore, the word "node" is used quite often in the paper, so it should be made clear, what this refers to exactly.
+X -- Q5 The Boolean signaling modeling paragraph needs to be extended in more details: To me it is not clear, why e.g., the transition rates should be in [0, inf) and not [0,1], since we are talking about probabilities. The concept of asynchronous updating should be made a bit clearer as well. Furthermore, it is often referred to the evaluation of the Boolean formulas as the most expensive computational part. It would help to get an idea, how such a formula would look like, and how they are implemented, to give the reader context about this problem. Furthermore, the word "node" is used quite often in the paper, so it should be made clear, what this refers to exactly.
 
---- Q6 In this respect, Algorithm 1 should be made clearer: how are transition rates computed? What does the bit-flip mean? delta t is computed using a "u" - where does that come from?
+X --- Q6 In this respect, Algorithm 1 should be made clearer: how are transition rates computed? What does the bit-flip mean? delta t is computed using a "u" - where does that come from?
 
 X -- Q7 The statistics are described, but how would a user interpret them/make use of them for themselves? What is this shared associative structure that the model is updating? Maybe a diagram would be helpful for visualization?
 
@@ -124,5 +124,5 @@ components, the automatic methods have been designed to infer Boolean formulas f
 the constraints encoded in the knowledge and the experimental data [7–9], allowing
 construction of large Boolean models.”
 
-5. Finally, to improve accessibility, the following could do with explanation: variables “u”
+X 5. Finally, to improve accessibility, the following could do with explanation: variables “u”
 and “δt” in Algorithm 1, “PRAM”, “CNF”, “DNF”.
