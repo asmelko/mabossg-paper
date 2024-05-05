@@ -43,6 +43,9 @@ A: We extended the background section with all your comments. Regarding the node
 Q: Algorithm 1 should be made clearer: how are transition rates computed? What does the bit-flip mean? delta t is computed using a "u" - where does that come from?
 A: Transition rates are computed by evaluating boolean formulas of each node, as is written on line 2 of Algorithm 1. To make it clearer, we modified the second paragraph of section 2.2, where we explicitly state, that the output of boolean logic is the transition rates. Regarding "u", the Gillespie algorithm uses 2 random numbers (r,u) drawn from the uniform distribution to randomly select the transition node and the transition time. We added comments to the algorithm and added a line referencing that the algorithm follows the Gillespie algorithm.
 
+Q: Please ellaborate more on the last point in Figure 5, that seems to be an outlier. Which synthetic model is this? Is it also found in the earlier figures? 
+A: Firstly, we included additional information about the synthetic model in the figure caption. Secondly, we analyzed the datapoint and it is the same case as in the previous MPI figure - the problem is distributed into so many small tasks that the actual cost of MPI communication becomes the bottleneck. We are sorry that we did not include this information in the first version - initially the figure was plotted in a different way which did not show this drastic speedup difference, after replotting the datapoint went unnoticed.
+
 Reviewer #2:
 
 Q: Figure 3: The x-axis states “Nodes count (log−scale)”, however, it appears to have a linear scale. The linear relationships claimed in the statement “We observed that the compilation time is linearly dependent on the number of nodes and formula lengths (measured in the number of occurring nodes).” is not clear from the provided figures, and should be clarified or, for example provide Figure 3 with a linear-linear or log-log scale.

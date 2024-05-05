@@ -172,7 +172,7 @@ While the former seems more adapted to represent complex behavior, such as non-l
 Many Boolean models have been built to describe biological systems to tackle a variety of problems: from understanding fundamental properties of cell cycle~\cite{faure2006cellcycle,sizek2019boolean} to advanced properties of cancer~\cite{fumia_carcinogenesis_2013,montagud2022prostate}.
 
 Historically, the task of building Boolean models involved reading an extensive amount of literature and summarizing it in a list of essential components and their interactions.
-More recently, thanks to advances in databases listing such interactions~\cite{licata2020signor,turei2016omnipath} and to experimental techniques providing information on a bigger number of components, the automatic methods have been designed to infer Boolean formulae from the constraints encoded in the knowledge and the experimental data~\cite{10.1093/bioinformatics/btaa484,chevalier2020synthesis,benevs2023boolean}, allowing construction of large Boolean models.
+More recently, database listings of such interactions~\cite{licata2020signor,turei2016omnipath} and experimental information retrieval techniques on a bigger number of components were subjected to many advancements. This resulted in the design of automatic methods for Boolean formulae inference from the constraints encoded in the knowledge and the experimental data~\cite{10.1093/bioinformatics/btaa484,chevalier2020synthesis,benevs2023boolean}, allowing construction of large Boolean models.
 While this effort faces many challenges, we believe it is a promising way to study the large-scale complexity of biological systems.
 However, in order to analyze the dynamic properties of such large Boolean models, we need to develop efficiently scalable simulation tools.
 
@@ -207,7 +207,7 @@ For convenience, it holds that
 
 
 \subsection{MaBoSS: Markovian Boolean Stochastic Simulator}
-MaBoSS simulates the \emph{asynchronous update strategy}, where only a single node changes its value in each transition (contrary to the \emph{synchronous update strategy}, for which all nodes that can be updated are updated~\cite{stoll2012continuous}). Therefore, there is a transition from $S$ to $S'$ only if it holds that 
+MaBoSS simulates the \emph{asynchronous update strategy}, where only a single node changes its value in each transition (as opposed to the \emph{synchronous update strategy}, for which all nodes that can be updated are updated~\cite{stoll2012continuous}). Therefore, there is a transition from $S$ to $S'$ only if it holds that 
 \begin{equation}
     \begin{split}
 S_j \ne S'_j & \text{ for a given } j \\
@@ -366,7 +366,7 @@ The MPI implementation benchmarks were run on the MareNostrum 4 supercomputer\fo
         \textsc{sizek}     & $87$ $(4)$                     & $1$M                     & $22$                       & $525$                      \\
         \textsc{Montagud}  & $133$ $(3)$                    & $1$M                     & $4$                        & $197$                      \\
         \hline
-        \emph{Synthetic}   & $10 - 1000$ $(5)$              & $1\text{M} - 10\text{M}$ & $10 - 100$                 & $100$                      \\
+        \emph{Synthetic}   & $10 - 1000$ $(5)$              & $1\text{M} - 100\text{M}$ & $10 - 100$                 & $100$                      \\
         \bottomrule
     \end{tabular}
     \centering
@@ -411,7 +411,7 @@ Additionally, Figure~\ref{fig:synth} shows the total runtime of the GPU implemen
 \begin{figure}%[tbhp]
 \centering
 \includegraphics[width=3.25in]{plots/sizek_mpi.pdf}
-\caption{Scalability results of MPI implementation on Sizek model with up to 192 MPI nodes and 20 cores per node, summing up to 3840 cores.}
+\caption{Scalability results of MPI implementation on Sizek model simulating $1$ million trajectories with up to 192 MPI nodes and 20 cores per node, summing up to 3840 cores.}
 \label{fig:sizek_results}
 \end{figure}
 
@@ -420,11 +420,11 @@ Figure~\ref{fig:sizek_results} shows the efficiency of the MaBoSS.MPI implementa
 \begin{figure}%[tbhp]
 \centering
 \includegraphics[width=3.25in]{plots/synth_mpi_speedup.pdf}
-\caption{Speedup scaling of MPI implementation on a synthetic model with 1000 nodes and the formula size of 10, running on up to 192 MPI nodes with 32 cores per MPI node, summing up to 6144 cores.}
+\caption{Speedup scaling of MPI implementation on the synthetic model with 1000 nodes, 100 million trajectories and the formula size of 10, running on up to 192 MPI nodes with 32 cores per MPI node, summing up to 6144 cores.}
 \label{fig:synthetic_results}
 \end{figure}
 
-To stress the scalability of the implementation, we also used a synthetic model with 1000 nodes. We simulated this model on 32 cores per MPI node, on 1 to 192 nodes (32 to 6144 cores). The obtained speedups are summarized in Figure~\ref{fig:synthetic_results}. Using this configuration, the simulation time decreases from 20 hours on 1 MPI node to 430 seconds on 192 nodes. As expected, the plateau in the speedup was not observed in simulations that involve larger models.
+To stress the scalability of the implementation, we also used the synthetic model with 1000 nodes running $100$ million trajectories. We simulated this model on 32 cores per MPI node, on 1 to 192 nodes (32 to 6144 cores). The obtained speedups are summarized in Figure~\ref{fig:synthetic_results}. Using this configuration, the simulation time decreases from 20 hours on 1 MPI node to 430 seconds on 192 nodes. As expected, the plateau in the speedup was observed only for much bigger suites. More specifically, we can see a pronounced decrease in the speedup at $192$ nodes, hitting the aforementioned bottleneck during the utilization of more than $4096$ cores.
 
 % We simulated a cell cycle model by Sizek et al.\cite{sizek2019boolean} (Figure~\ref{fig:sizek_results}). A comparison of execution times of MaBoSS v2.5.3 and v2.4.0 using 40 cores and one million individual simulations showed a considerable (3×) speed-up between the pre- and post-optimisation versions, which is mostly due to optimised memory usage (figure 2, purple vs red). We used the same test with the MPI implementation of MaBoSS, using 20 cores for each MPI node, from 1 MPI node up to 192 MPI nodes. We can observe a very good speedup (>50x) up to 64 MPI nodes (1.28k cores), and a plateau for larger setups (Figure 7, green). This is probably due the very short simulation time (10s) for that setup and the minimum overhead for such a parallel simulation, and needs testing on larger simulations.
 

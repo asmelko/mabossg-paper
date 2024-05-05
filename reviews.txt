@@ -42,7 +42,7 @@ X -- Q10 The legend in the figures needs to be more specific to be able to inter
 
 X -- Q11 In Figure1, the High-End NVIDIA TESLA is either slower or as fast as the consumer grade laptop GPU. Is this purely due to the compilation time (as Figure 2 would suggest, that it makes a difference)? 
 
--- Q12 Please ellaborate more on the last point in Figure 5, that seems to be an outlier. Which synthetic model is this? Is it also found in the earlier figures? 
+X -- Q12 Please ellaborate more on the last point in Figure 5, that seems to be an outlier. Which synthetic model is this? Is it also found in the earlier figures? 
 
 X -- Q13 There is no demonstration of how a user would actually deal with the code - especially since the GPU version is based on a hard-coded implementation of the rules. A demonstrative example would help to get an idea, how a user would actually get started, and how deep he needs to dig into the code - especially for a biological audience, accessability of such tools is an important point
 
@@ -117,7 +117,7 @@ collect2: error: ld returned 1 exit status
 While this may be a user fault, I ask the authors to check if there are any errors in
 the current repository to cause a “undefined reference” error.
 
-4. The manuscript was well written, however I found the following sentence could be
+X 4. The manuscript was well written, however I found the following sentence could be
 improved: “More recently, thanks to advances in databases listing such interactions [5, 6]
 and to experimental techniques providing information on a bigger number of
 components, the automatic methods have been designed to infer Boolean formulas from
